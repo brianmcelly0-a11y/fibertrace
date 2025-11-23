@@ -1,4 +1,6 @@
-import { mockData } from "@/lib/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { jobsApi, statsApi } from "@/lib/api";
+import { useAuth } from "@/lib/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,18 +10,27 @@ import {
   CheckCircle2, 
   Clock, 
   AlertTriangle,
-  TrendingUp,
   MapPin,
   Plus
 } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Dashboard() {
-  const { jobs, user } = mockData;
-  
-  const pendingJobs = jobs.filter(j => j.status === 'Pending').length;
-  const inProgressJobs = jobs.filter(j => j.status === 'In Progress').length;
-  const completedJobs = jobs.filter(j => j.status === 'Completed').length;
+  const { user } = useAuth();
+  const { data: jobs = [], isLoading: jobsLoading } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: jobsApi.getAll,
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['stats'],
+    queryFn: statsApi.getStats,
+    initialData: { total: 0, pending: 0, inProgress: 0, completed: 0 }
+  });
+
+  if (jobsLoading) {
+    return <div className="text-white">Loading...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -47,8 +58,8 @@ export default function Dashboard() {
             <Briefcase className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{jobs.length}</div>
-            <p className="text-xs text-muted-foreground">+2 from yesterday</p>
+            <div className="text-2xl font-bold text-white">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">All assigned jobs</p>
           </CardContent>
         </Card>
         <Card className="bg-card/50 border-amber-500/20">
@@ -57,7 +68,7 @@ export default function Dashboard() {
             <Clock className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-500">{pendingJobs}</div>
+            <div className="text-2xl font-bold text-amber-500">{stats.pending}</div>
             <p className="text-xs text-muted-foreground">Requires attention</p>
           </CardContent>
         </Card>
@@ -67,7 +78,7 @@ export default function Dashboard() {
             <Activity className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-500">{inProgressJobs}</div>
+            <div className="text-2xl font-bold text-blue-500">{stats.inProgress}</div>
             <p className="text-xs text-muted-foreground">Currently active</p>
           </CardContent>
         </Card>
@@ -77,8 +88,8 @@ export default function Dashboard() {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">{completedJobs}</div>
-            <p className="text-xs text-muted-foreground">98% satisfaction rate</p>
+            <div className="text-2xl font-bold text-green-500">{stats.completed}</div>
+            <p className="text-xs text-muted-foreground">Successfully finished</p>
           </CardContent>
         </Card>
       </div>
@@ -89,7 +100,9 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold font-display">Active Assignments</h2>
-            <Button variant="link" className="text-primary">View All</Button>
+            <Link href="/jobs">
+              <Button variant="link" className="text-primary">View All</Button>
+            </Link>
           </div>
 
           <div className="space-y-4">
@@ -168,12 +181,14 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="font-medium text-white">Low Stock Alert</p>
-                    <p className="text-sm text-muted-foreground">SC/APC Connectors below 20 units.</p>
+                    <p className="text-sm text-muted-foreground">SC/APC Connectors below threshold.</p>
                   </div>
                 </div>
-                <Button variant="secondary" className="w-full mt-4 h-8 text-xs">
-                  Order Supplies
-                </Button>
+                <Link href="/inventory">
+                  <Button variant="secondary" className="w-full mt-4 h-8 text-xs">
+                    View Inventory
+                  </Button>
+                </Link>
              </CardContent>
            </Card>
         </div>

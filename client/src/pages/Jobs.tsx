@@ -1,4 +1,5 @@
-import { mockData } from "@/lib/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { jobsApi } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,13 +8,20 @@ import {
   Search, 
   Filter, 
   MapPin, 
-  Calendar, 
   MoreVertical,
   Navigation
 } from "lucide-react";
+import { format } from "date-fns";
 
 export default function Jobs() {
-  const { jobs } = mockData;
+  const { data: jobs = [], isLoading } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: jobsApi.getAll,
+  });
+
+  if (isLoading) {
+    return <div className="text-white">Loading jobs...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -41,7 +49,9 @@ export default function Jobs() {
                 {/* Left: Status Indicator & Date */}
                 <div className="flex md:flex-col items-center md:items-start justify-between gap-2 md:w-32 md:border-r md:border-border/30 md:pr-6">
                   <div className="text-center md:text-left">
-                    <p className="text-sm font-medium text-muted-foreground">{job.date}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {format(new Date(job.scheduledDate), 'MMM dd, yyyy')}
+                    </p>
                     <p className="text-xs text-muted-foreground">09:00 AM</p>
                   </div>
                   <Badge variant="outline" className={`
@@ -75,7 +85,7 @@ export default function Jobs() {
                       {job.type}
                     </Badge>
                     <Badge variant="secondary" className="bg-white/5 hover:bg-white/10 text-muted-foreground">
-                      ID: {job.id}
+                      ID: #{job.id}
                     </Badge>
                     {job.notes && (
                       <span className="text-xs text-muted-foreground flex items-center mt-1 ml-2">
@@ -99,6 +109,14 @@ export default function Jobs() {
             </CardContent>
           </Card>
         ))}
+
+        {jobs.length === 0 && (
+          <Card className="bg-card/40 border-border/50">
+            <CardContent className="p-12 text-center">
+              <p className="text-muted-foreground">No jobs assigned yet.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

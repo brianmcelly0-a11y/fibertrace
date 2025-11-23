@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from "wouter";
+import { useAuth } from "@/lib/useAuth";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -19,6 +20,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = React.useState(false);
+  const { user, logout } = useAuth();
+
+  React.useEffect(() => {
+    if (!user) {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
+
+  if (!user) return null;
 
   const navItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -70,17 +80,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3 mb-4 px-2">
           <Avatar className="h-10 w-10 border border-primary/20">
             <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>AT</AvatarFallback>
+            <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
           </Avatar>
           <div className="overflow-hidden">
-            <p className="text-sm font-medium text-white truncate">Alex Tech</p>
-            <p className="text-xs text-muted-foreground truncate">Technician ID: 8842</p>
+            <p className="text-sm font-medium text-white truncate">{user.name}</p>
+            <p className="text-xs text-muted-foreground truncate">ID: {user.id}</p>
           </div>
         </div>
         <Button 
           variant="ghost" 
           className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={() => setLocation('/')}
+          onClick={logout}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Logout

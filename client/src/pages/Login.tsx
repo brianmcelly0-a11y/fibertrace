@@ -1,22 +1,34 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useAuth } from "@/lib/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Wifi, Lock, User, ArrowRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import bgImage from "@assets/generated_images/dark_fiber_optic_background_with_neon_blue_light_trails.png";
 
 export default function Login() {
-  const [, setLocation] = useLocation();
+  const { login } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("alex.tech@fibertrace.com");
+  const [password, setPassword] = useState("password");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate login delay
-    setTimeout(() => {
-      setLocation("/dashboard");
-    }, 1500);
+    
+    try {
+      await login(email, password);
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,9 +61,12 @@ export default function Login() {
                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input 
                   id="email" 
+                  type="email"
                   placeholder="tech-id@fibertrace.net" 
                   className="pl-10 bg-black/20 border-white/10 focus:border-primary focus:ring-primary/50 h-12"
-                  defaultValue="alex.tech"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -65,7 +80,9 @@ export default function Login() {
                   type="password" 
                   placeholder="••••••••" 
                   className="pl-10 bg-black/20 border-white/10 focus:border-primary focus:ring-primary/50 h-12"
-                  defaultValue="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
               </div>
             </div>
