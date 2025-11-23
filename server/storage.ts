@@ -693,7 +693,11 @@ export class MemoryStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const newUser: User = {
       id: this.nextUserId++,
-      ...user,
+      email: user.email,
+      password: user.password,
+      name: user.name,
+      role: user.role || "Technician",
+      phone: user.phone || null,
       createdAt: new Date(),
     };
     this.users.push(newUser);
@@ -712,7 +716,14 @@ export class MemoryStorage implements IStorage {
   async createClient(client: InsertClient): Promise<Client> {
     const newClient: Client = {
       id: this.nextClientId++,
-      ...client,
+      name: client.name,
+      email: client.email || null,
+      phone: client.phone,
+      address: client.address,
+      package: client.package || "Bronze",
+      status: client.status || "Active",
+      latitude: client.latitude || null,
+      longitude: client.longitude || null,
       createdAt: new Date(),
     };
     this.clients.push(newClient);
@@ -766,7 +777,18 @@ export class MemoryStorage implements IStorage {
   async createJob(job: InsertJob): Promise<Job> {
     const newJob: Job = {
       id: this.nextJobId++,
-      ...job,
+      clientId: job.clientId,
+      technicianId: job.technicianId,
+      type: job.type,
+      status: job.status || "Pending",
+      scheduledDate: job.scheduledDate,
+      completedDate: job.completedDate || null,
+      address: job.address,
+      latitude: job.latitude || null,
+      longitude: job.longitude || null,
+      notes: job.notes || null,
+      cableUsed: job.cableUsed || null,
+      materialsUsed: job.materialsUsed || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -804,7 +826,13 @@ export class MemoryStorage implements IStorage {
   async createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
     const newItem: InventoryItem = {
       id: this.nextInventoryId++,
-      ...item,
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity || 0,
+      unit: item.unit,
+      minStockLevel: item.minStockLevel || 10,
+      status: item.status || "In Stock",
+      lastRestocked: item.lastRestocked || null,
       createdAt: new Date(),
     };
     this.inventoryItems.push(newItem);
@@ -862,7 +890,12 @@ export class MemoryStorage implements IStorage {
   async createMeterReading(reading: InsertMeterReading): Promise<MeterReading> {
     const newReading: MeterReading = {
       id: this.nextMeterReadingId++,
-      ...reading,
+      jobId: reading.jobId,
+      deviceName: reading.deviceName || null,
+      readingType: reading.readingType,
+      lossDbm: reading.lossDbm || null,
+      distanceMeters: reading.distanceMeters || null,
+      eventMarkers: reading.eventMarkers || null,
       timestamp: new Date(),
     };
     this.meterReadings.push(newReading);
