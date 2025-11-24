@@ -12,12 +12,42 @@ import {
   type MeterReading,
   type InsertMeterReading,
   type InsertInventoryUsage,
+  type Olt,
+  type InsertOlt,
+  type Odf,
+  type InsertOdf,
+  type Splitter,
+  type InsertSplitter,
+  type Fat,
+  type InsertFat,
+  type Atb,
+  type InsertAtb,
+  type Closure,
+  type InsertClosure,
+  type SpliceRecord,
+  type InsertSpliceRecord,
+  type PowerReading,
+  type InsertPowerReading,
+  type FiberRoute,
+  type InsertFiberRoute,
+  type FieldReport,
+  type InsertFieldReport,
   users,
   clients,
   jobs,
   inventoryItems,
   meterReadings,
   inventoryUsage,
+  olts,
+  odfs,
+  splitters,
+  fats,
+  atbs,
+  closures,
+  spliceRecords,
+  powerReadings,
+  fiberRoutes,
+  fieldReports,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -60,6 +90,86 @@ export interface IStorage {
     inProgress: number;
     completed: number;
   }>;
+
+  // OLT Management
+  getOlts(): Promise<Olt[]>;
+  getOlt(id: number): Promise<Olt | undefined>;
+  createOlt(olt: InsertOlt): Promise<Olt>;
+  updateOlt(id: number, olt: Partial<InsertOlt>): Promise<Olt | undefined>;
+  deleteOlt(id: number): Promise<boolean>;
+
+  // ODF Management
+  getOdfs(): Promise<Odf[]>;
+  getOdf(id: number): Promise<Odf | undefined>;
+  createOdf(odf: InsertOdf): Promise<Odf>;
+  updateOdf(id: number, odf: Partial<InsertOdf>): Promise<Odf | undefined>;
+  deleteOdf(id: number): Promise<boolean>;
+
+  // Splitter Management
+  getSplitters(): Promise<Splitter[]>;
+  getSplitter(id: number): Promise<Splitter | undefined>;
+  getSplittersByParent(parentNodeId: number, parentNodeType: string): Promise<Splitter[]>;
+  createSplitter(splitter: InsertSplitter): Promise<Splitter>;
+  updateSplitter(id: number, splitter: Partial<InsertSplitter>): Promise<Splitter | undefined>;
+  deleteSplitter(id: number): Promise<boolean>;
+
+  // FAT Management
+  getFats(): Promise<Fat[]>;
+  getFat(id: number): Promise<Fat | undefined>;
+  getFatsBySplitter(splitterId: number): Promise<Fat[]>;
+  createFat(fat: InsertFat): Promise<Fat>;
+  updateFat(id: number, fat: Partial<InsertFat>): Promise<Fat | undefined>;
+  deleteFat(id: number): Promise<boolean>;
+
+  // ATB Management
+  getAtbs(): Promise<Atb[]>;
+  getAtb(id: number): Promise<Atb | undefined>;
+  getAtbsByFat(fatId: number): Promise<Atb[]>;
+  createAtb(atb: InsertAtb): Promise<Atb>;
+  updateAtb(id: number, atb: Partial<InsertAtb>): Promise<Atb | undefined>;
+  deleteAtb(id: number): Promise<boolean>;
+
+  // Closure Management
+  getClosures(): Promise<Closure[]>;
+  getClosure(id: number): Promise<Closure | undefined>;
+  getClosuresByParent(parentNodeId: number, parentNodeType: string): Promise<Closure[]>;
+  createClosure(closure: InsertClosure): Promise<Closure>;
+  updateClosure(id: number, closure: Partial<InsertClosure>): Promise<Closure | undefined>;
+  deleteClosure(id: number): Promise<boolean>;
+
+  // Splice Records Management
+  getSpliceRecords(): Promise<SpliceRecord[]>;
+  getSpliceRecord(id: number): Promise<SpliceRecord | undefined>;
+  getSpliceRecordsByClosure(closureId: number): Promise<SpliceRecord[]>;
+  getSpliceRecordsByJob(jobId: number): Promise<SpliceRecord[]>;
+  createSpliceRecord(record: InsertSpliceRecord): Promise<SpliceRecord>;
+  updateSpliceRecord(id: number, record: Partial<InsertSpliceRecord>): Promise<SpliceRecord | undefined>;
+  deleteSpliceRecord(id: number): Promise<boolean>;
+
+  // Power Readings Management
+  getPowerReadings(): Promise<PowerReading[]>;
+  getPowerReading(id: number): Promise<PowerReading | undefined>;
+  getPowerReadingsByNode(nodeId: number, nodeType: string): Promise<PowerReading[]>;
+  createPowerReading(reading: InsertPowerReading): Promise<PowerReading>;
+  updatePowerReading(id: number, reading: Partial<InsertPowerReading>): Promise<PowerReading | undefined>;
+  deletePowerReading(id: number): Promise<boolean>;
+
+  // Fiber Routes Management
+  getFiberRoutes(): Promise<FiberRoute[]>;
+  getFiberRoute(id: number): Promise<FiberRoute | undefined>;
+  getFiberRoutesByJob(jobId: number): Promise<FiberRoute[]>;
+  createFiberRoute(route: InsertFiberRoute): Promise<FiberRoute>;
+  updateFiberRoute(id: number, route: Partial<InsertFiberRoute>): Promise<FiberRoute | undefined>;
+  deleteFiberRoute(id: number): Promise<boolean>;
+
+  // Field Reports Management
+  getFieldReports(): Promise<FieldReport[]>;
+  getFieldReport(id: number): Promise<FieldReport | undefined>;
+  getFieldReportsByJob(jobId: number): Promise<FieldReport[]>;
+  getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]>;
+  createFieldReport(report: InsertFieldReport): Promise<FieldReport>;
+  updateFieldReport(id: number, report: Partial<InsertFieldReport>): Promise<FieldReport | undefined>;
+  deleteFieldReport(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -295,6 +405,346 @@ export class DatabaseStorage implements IStorage {
     }
 
     return stats;
+  }
+
+  // OLT Management
+  async getOlts(): Promise<Olt[]> {
+    return db.select().from(olts).orderBy(desc(olts.createdAt));
+  }
+
+  async getOlt(id: number): Promise<Olt | undefined> {
+    const result = await db.select().from(olts).where(eq(olts.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createOlt(olt: InsertOlt): Promise<Olt> {
+    const result = await db.insert(olts).values(olt).returning();
+    return result[0];
+  }
+
+  async updateOlt(id: number, olt: Partial<InsertOlt>): Promise<Olt | undefined> {
+    const result = await db.update(olts)
+      .set({ ...olt, updatedAt: new Date() })
+      .where(eq(olts.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteOlt(id: number): Promise<boolean> {
+    const result = await db.delete(olts).where(eq(olts.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // ODF Management
+  async getOdfs(): Promise<Odf[]> {
+    return db.select().from(odfs).orderBy(desc(odfs.createdAt));
+  }
+
+  async getOdf(id: number): Promise<Odf | undefined> {
+    const result = await db.select().from(odfs).where(eq(odfs.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createOdf(odf: InsertOdf): Promise<Odf> {
+    const result = await db.insert(odfs).values(odf).returning();
+    return result[0];
+  }
+
+  async updateOdf(id: number, odf: Partial<InsertOdf>): Promise<Odf | undefined> {
+    const result = await db.update(odfs)
+      .set({ ...odf, updatedAt: new Date() })
+      .where(eq(odfs.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteOdf(id: number): Promise<boolean> {
+    const result = await db.delete(odfs).where(eq(odfs.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Splitter Management
+  async getSplitters(): Promise<Splitter[]> {
+    return db.select().from(splitters).orderBy(desc(splitters.createdAt));
+  }
+
+  async getSplitter(id: number): Promise<Splitter | undefined> {
+    const result = await db.select().from(splitters).where(eq(splitters.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getSplittersByParent(parentNodeId: number, parentNodeType: string): Promise<Splitter[]> {
+    return db.select().from(splitters)
+      .where(and(eq(splitters.parentNodeId, parentNodeId), eq(splitters.parentNodeType, parentNodeType)))
+      .orderBy(desc(splitters.createdAt));
+  }
+
+  async createSplitter(splitter: InsertSplitter): Promise<Splitter> {
+    const result = await db.insert(splitters).values(splitter).returning();
+    return result[0];
+  }
+
+  async updateSplitter(id: number, splitter: Partial<InsertSplitter>): Promise<Splitter | undefined> {
+    const result = await db.update(splitters)
+      .set({ ...splitter, updatedAt: new Date() })
+      .where(eq(splitters.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSplitter(id: number): Promise<boolean> {
+    const result = await db.delete(splitters).where(eq(splitters.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // FAT Management
+  async getFats(): Promise<Fat[]> {
+    return db.select().from(fats).orderBy(desc(fats.createdAt));
+  }
+
+  async getFat(id: number): Promise<Fat | undefined> {
+    const result = await db.select().from(fats).where(eq(fats.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getFatsBySplitter(splitterId: number): Promise<Fat[]> {
+    return db.select().from(fats)
+      .where(eq(fats.splitterId, splitterId))
+      .orderBy(desc(fats.createdAt));
+  }
+
+  async createFat(fat: InsertFat): Promise<Fat> {
+    const result = await db.insert(fats).values(fat).returning();
+    return result[0];
+  }
+
+  async updateFat(id: number, fat: Partial<InsertFat>): Promise<Fat | undefined> {
+    const result = await db.update(fats)
+      .set({ ...fat, updatedAt: new Date() })
+      .where(eq(fats.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteFat(id: number): Promise<boolean> {
+    const result = await db.delete(fats).where(eq(fats.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // ATB Management
+  async getAtbs(): Promise<Atb[]> {
+    return db.select().from(atbs).orderBy(desc(atbs.createdAt));
+  }
+
+  async getAtb(id: number): Promise<Atb | undefined> {
+    const result = await db.select().from(atbs).where(eq(atbs.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getAtbsByFat(fatId: number): Promise<Atb[]> {
+    return db.select().from(atbs)
+      .where(eq(atbs.fatId, fatId))
+      .orderBy(desc(atbs.createdAt));
+  }
+
+  async createAtb(atb: InsertAtb): Promise<Atb> {
+    const result = await db.insert(atbs).values(atb).returning();
+    return result[0];
+  }
+
+  async updateAtb(id: number, atb: Partial<InsertAtb>): Promise<Atb | undefined> {
+    const result = await db.update(atbs)
+      .set({ ...atb, updatedAt: new Date() })
+      .where(eq(atbs.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAtb(id: number): Promise<boolean> {
+    const result = await db.delete(atbs).where(eq(atbs.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Closure Management
+  async getClosures(): Promise<Closure[]> {
+    return db.select().from(closures).orderBy(desc(closures.createdAt));
+  }
+
+  async getClosure(id: number): Promise<Closure | undefined> {
+    const result = await db.select().from(closures).where(eq(closures.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getClosuresByParent(parentNodeId: number, parentNodeType: string): Promise<Closure[]> {
+    return db.select().from(closures)
+      .where(and(eq(closures.parentNodeId, parentNodeId), eq(closures.parentNodeType, parentNodeType)))
+      .orderBy(desc(closures.createdAt));
+  }
+
+  async createClosure(closure: InsertClosure): Promise<Closure> {
+    const result = await db.insert(closures).values(closure).returning();
+    return result[0];
+  }
+
+  async updateClosure(id: number, closure: Partial<InsertClosure>): Promise<Closure | undefined> {
+    const result = await db.update(closures)
+      .set({ ...closure, updatedAt: new Date() })
+      .where(eq(closures.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteClosure(id: number): Promise<boolean> {
+    const result = await db.delete(closures).where(eq(closures.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Splice Records Management
+  async getSpliceRecords(): Promise<SpliceRecord[]> {
+    return db.select().from(spliceRecords).orderBy(desc(spliceRecords.spliceDate));
+  }
+
+  async getSpliceRecord(id: number): Promise<SpliceRecord | undefined> {
+    const result = await db.select().from(spliceRecords).where(eq(spliceRecords.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getSpliceRecordsByClosure(closureId: number): Promise<SpliceRecord[]> {
+    return db.select().from(spliceRecords)
+      .where(eq(spliceRecords.closureId, closureId))
+      .orderBy(desc(spliceRecords.spliceDate));
+  }
+
+  async getSpliceRecordsByJob(jobId: number): Promise<SpliceRecord[]> {
+    return db.select().from(spliceRecords)
+      .where(eq(spliceRecords.jobId, jobId))
+      .orderBy(desc(spliceRecords.spliceDate));
+  }
+
+  async createSpliceRecord(record: InsertSpliceRecord): Promise<SpliceRecord> {
+    const result = await db.insert(spliceRecords).values(record).returning();
+    return result[0];
+  }
+
+  async updateSpliceRecord(id: number, record: Partial<InsertSpliceRecord>): Promise<SpliceRecord | undefined> {
+    const result = await db.update(spliceRecords)
+      .set(record)
+      .where(eq(spliceRecords.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSpliceRecord(id: number): Promise<boolean> {
+    const result = await db.delete(spliceRecords).where(eq(spliceRecords.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Power Readings Management
+  async getPowerReadings(): Promise<PowerReading[]> {
+    return db.select().from(powerReadings).orderBy(desc(powerReadings.readingDate));
+  }
+
+  async getPowerReading(id: number): Promise<PowerReading | undefined> {
+    const result = await db.select().from(powerReadings).where(eq(powerReadings.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getPowerReadingsByNode(nodeId: number, nodeType: string): Promise<PowerReading[]> {
+    return db.select().from(powerReadings)
+      .where(and(eq(powerReadings.nodeId, nodeId), eq(powerReadings.nodeType, nodeType)))
+      .orderBy(desc(powerReadings.readingDate));
+  }
+
+  async createPowerReading(reading: InsertPowerReading): Promise<PowerReading> {
+    const result = await db.insert(powerReadings).values(reading).returning();
+    return result[0];
+  }
+
+  async updatePowerReading(id: number, reading: Partial<InsertPowerReading>): Promise<PowerReading | undefined> {
+    const result = await db.update(powerReadings)
+      .set(reading)
+      .where(eq(powerReadings.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePowerReading(id: number): Promise<boolean> {
+    const result = await db.delete(powerReadings).where(eq(powerReadings.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Fiber Routes Management
+  async getFiberRoutes(): Promise<FiberRoute[]> {
+    return db.select().from(fiberRoutes).orderBy(desc(fiberRoutes.createdAt));
+  }
+
+  async getFiberRoute(id: number): Promise<FiberRoute | undefined> {
+    const result = await db.select().from(fiberRoutes).where(eq(fiberRoutes.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getFiberRoutesByJob(jobId: number): Promise<FiberRoute[]> {
+    return db.select().from(fiberRoutes)
+      .where(eq(fiberRoutes.jobId, jobId))
+      .orderBy(desc(fiberRoutes.createdAt));
+  }
+
+  async createFiberRoute(route: InsertFiberRoute): Promise<FiberRoute> {
+    const result = await db.insert(fiberRoutes).values(route).returning();
+    return result[0];
+  }
+
+  async updateFiberRoute(id: number, route: Partial<InsertFiberRoute>): Promise<FiberRoute | undefined> {
+    const result = await db.update(fiberRoutes)
+      .set(route)
+      .where(eq(fiberRoutes.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteFiberRoute(id: number): Promise<boolean> {
+    const result = await db.delete(fiberRoutes).where(eq(fiberRoutes.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Field Reports Management
+  async getFieldReports(): Promise<FieldReport[]> {
+    return db.select().from(fieldReports).orderBy(desc(fieldReports.createdAt));
+  }
+
+  async getFieldReport(id: number): Promise<FieldReport | undefined> {
+    const result = await db.select().from(fieldReports).where(eq(fieldReports.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getFieldReportsByJob(jobId: number): Promise<FieldReport[]> {
+    return db.select().from(fieldReports)
+      .where(eq(fieldReports.jobId, jobId))
+      .orderBy(desc(fieldReports.createdAt));
+  }
+
+  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> {
+    return db.select().from(fieldReports)
+      .where(eq(fieldReports.technicianId, technicianId))
+      .orderBy(desc(fieldReports.createdAt));
+  }
+
+  async createFieldReport(report: InsertFieldReport): Promise<FieldReport> {
+    const result = await db.insert(fieldReports).values(report).returning();
+    return result[0];
+  }
+
+  async updateFieldReport(id: number, report: Partial<InsertFieldReport>): Promise<FieldReport | undefined> {
+    const result = await db.update(fieldReports)
+      .set({ ...report, updatedAt: new Date() })
+      .where(eq(fieldReports.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteFieldReport(id: number): Promise<boolean> {
+    const result = await db.delete(fieldReports).where(eq(fieldReports.id, id)).returning();
+    return result.length > 0;
   }
 }
 
@@ -923,6 +1373,77 @@ export class MemoryStorage implements IStorage {
       completed: techJobs.filter(j => j.status === 'Completed').length,
     };
   }
+
+  // Topology Management - Basic stubs for offline support
+  async getOlts(): Promise<Olt[]> { return []; }
+  async getOlt(id: number): Promise<Olt | undefined> { return undefined; }
+  async createOlt(olt: InsertOlt): Promise<Olt> { return {} as Olt; }
+  async updateOlt(id: number, olt: Partial<InsertOlt>): Promise<Olt | undefined> { return undefined; }
+  async deleteOlt(id: number): Promise<boolean> { return false; }
+
+  async getOdfs(): Promise<Odf[]> { return []; }
+  async getOdf(id: number): Promise<Odf | undefined> { return undefined; }
+  async createOdf(odf: InsertOdf): Promise<Odf> { return {} as Odf; }
+  async updateOdf(id: number, odf: Partial<InsertOdf>): Promise<Odf | undefined> { return undefined; }
+  async deleteOdf(id: number): Promise<boolean> { return false; }
+
+  async getSplitters(): Promise<Splitter[]> { return []; }
+  async getSplitter(id: number): Promise<Splitter | undefined> { return undefined; }
+  async getSplittersByParent(parentNodeId: number, parentNodeType: string): Promise<Splitter[]> { return []; }
+  async createSplitter(splitter: InsertSplitter): Promise<Splitter> { return {} as Splitter; }
+  async updateSplitter(id: number, splitter: Partial<InsertSplitter>): Promise<Splitter | undefined> { return undefined; }
+  async deleteSplitter(id: number): Promise<boolean> { return false; }
+
+  async getFats(): Promise<Fat[]> { return []; }
+  async getFat(id: number): Promise<Fat | undefined> { return undefined; }
+  async getFatsBySplitter(splitterId: number): Promise<Fat[]> { return []; }
+  async createFat(fat: InsertFat): Promise<Fat> { return {} as Fat; }
+  async updateFat(id: number, fat: Partial<InsertFat>): Promise<Fat | undefined> { return undefined; }
+  async deleteFat(id: number): Promise<boolean> { return false; }
+
+  async getAtbs(): Promise<Atb[]> { return []; }
+  async getAtb(id: number): Promise<Atb | undefined> { return undefined; }
+  async getAtbsByFat(fatId: number): Promise<Atb[]> { return []; }
+  async createAtb(atb: InsertAtb): Promise<Atb> { return {} as Atb; }
+  async updateAtb(id: number, atb: Partial<InsertAtb>): Promise<Atb | undefined> { return undefined; }
+  async deleteAtb(id: number): Promise<boolean> { return false; }
+
+  async getClosures(): Promise<Closure[]> { return []; }
+  async getClosure(id: number): Promise<Closure | undefined> { return undefined; }
+  async getClosuresByParent(parentNodeId: number, parentNodeType: string): Promise<Closure[]> { return []; }
+  async createClosure(closure: InsertClosure): Promise<Closure> { return {} as Closure; }
+  async updateClosure(id: number, closure: Partial<InsertClosure>): Promise<Closure | undefined> { return undefined; }
+  async deleteClosure(id: number): Promise<boolean> { return false; }
+
+  async getSpliceRecords(): Promise<SpliceRecord[]> { return []; }
+  async getSpliceRecord(id: number): Promise<SpliceRecord | undefined> { return undefined; }
+  async getSpliceRecordsByClosure(closureId: number): Promise<SpliceRecord[]> { return []; }
+  async getSpliceRecordsByJob(jobId: number): Promise<SpliceRecord[]> { return []; }
+  async createSpliceRecord(record: InsertSpliceRecord): Promise<SpliceRecord> { return {} as SpliceRecord; }
+  async updateSpliceRecord(id: number, record: Partial<InsertSpliceRecord>): Promise<SpliceRecord | undefined> { return undefined; }
+  async deleteSpliceRecord(id: number): Promise<boolean> { return false; }
+
+  async getPowerReadings(): Promise<PowerReading[]> { return []; }
+  async getPowerReading(id: number): Promise<PowerReading | undefined> { return undefined; }
+  async getPowerReadingsByNode(nodeId: number, nodeType: string): Promise<PowerReading[]> { return []; }
+  async createPowerReading(reading: InsertPowerReading): Promise<PowerReading> { return {} as PowerReading; }
+  async updatePowerReading(id: number, reading: Partial<InsertPowerReading>): Promise<PowerReading | undefined> { return undefined; }
+  async deletePowerReading(id: number): Promise<boolean> { return false; }
+
+  async getFiberRoutes(): Promise<FiberRoute[]> { return []; }
+  async getFiberRoute(id: number): Promise<FiberRoute | undefined> { return undefined; }
+  async getFiberRoutesByJob(jobId: number): Promise<FiberRoute[]> { return []; }
+  async createFiberRoute(route: InsertFiberRoute): Promise<FiberRoute> { return {} as FiberRoute; }
+  async updateFiberRoute(id: number, route: Partial<InsertFiberRoute>): Promise<FiberRoute | undefined> { return undefined; }
+  async deleteFiberRoute(id: number): Promise<boolean> { return false; }
+
+  async getFieldReports(): Promise<FieldReport[]> { return []; }
+  async getFieldReport(id: number): Promise<FieldReport | undefined> { return undefined; }
+  async getFieldReportsByJob(jobId: number): Promise<FieldReport[]> { return []; }
+  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> { return []; }
+  async createFieldReport(report: InsertFieldReport): Promise<FieldReport> { return {} as FieldReport; }
+  async updateFieldReport(id: number, report: Partial<InsertFieldReport>): Promise<FieldReport | undefined> { return undefined; }
+  async deleteFieldReport(id: number): Promise<boolean> { return false; }
 }
 
 // Use MemoryStorage for offline functionality
