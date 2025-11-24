@@ -756,12 +756,32 @@ export class MemoryStorage implements IStorage {
   private inventoryItems: InventoryItem[] = [];
   private meterReadings: MeterReading[] = [];
   private inventoryUsageLog: any[] = [];
+  private olts: Olt[] = [];
+  private odfs: Odf[] = [];
+  private splitters: Splitter[] = [];
+  private fats: Fat[] = [];
+  private atbs: Atb[] = [];
+  private closures: Closure[] = [];
+  private spliceRecords: SpliceRecord[] = [];
+  private powerReadings: PowerReading[] = [];
+  private fiberRoutes: FiberRoute[] = [];
+  private fieldReports: FieldReport[] = [];
   private nextUserId = 1;
   private nextClientId = 1;
   private nextJobId = 1;
   private nextInventoryId = 1;
   private nextMeterReadingId = 1;
   private nextInventoryUsageId = 1;
+  private nextOltId = 1;
+  private nextOdfId = 1;
+  private nextSplitterId = 1;
+  private nextFatId = 1;
+  private nextAtbId = 1;
+  private nextClosureId = 1;
+  private nextSpliceRecordId = 1;
+  private nextPowerReadingId = 1;
+  private nextFiberRouteId = 1;
+  private nextFieldReportId = 1;
 
   constructor() {
     this.seedData();
@@ -1129,6 +1149,244 @@ export class MemoryStorage implements IStorage {
       },
     ];
     this.nextMeterReadingId = 4;
+
+    // Seed Topology - OLTs
+    this.olts = [
+      {
+        id: 1,
+        name: "OLT-SJ-01",
+        location: "San Jose Central Office",
+        latitude: "37.33874",
+        longitude: "-121.88485",
+        capacity: 48,
+        usedPorts: 24,
+        status: "Active",
+        ipAddress: "192.168.1.10",
+        vendor: "Huawei",
+        model: "MA5800-X15",
+        notes: "Primary OLT for San Jose region",
+        createdAt: new Date("2024-01-05"),
+        updatedAt: new Date("2024-01-05"),
+      },
+      {
+        id: 2,
+        name: "OLT-SF-01",
+        location: "San Francisco Hub",
+        latitude: "37.77493",
+        longitude: "-122.41942",
+        capacity: 64,
+        usedPorts: 32,
+        status: "Active",
+        ipAddress: "192.168.1.11",
+        vendor: "Nokia",
+        model: "7360 ISAM",
+        notes: "Main OLT for SF downtown area",
+        createdAt: new Date("2024-01-06"),
+        updatedAt: new Date("2024-01-06"),
+      },
+    ];
+    this.nextOltId = 3;
+
+    // Seed Topology - ODFs
+    this.odfs = [
+      {
+        id: 1,
+        name: "ODF-SJ-Main",
+        oltId: 1,
+        location: "San Jose CO - 2nd Floor",
+        latitude: "37.33874",
+        longitude: "-121.88485",
+        totalPorts: 96,
+        usedPorts: 48,
+        status: "Active",
+        notes: "Main distribution frame for SJ region",
+        createdAt: new Date("2024-01-07"),
+        updatedAt: new Date("2024-01-07"),
+      },
+    ];
+    this.nextOdfId = 2;
+
+    // Seed Topology - Splitters
+    this.splitters = [
+      {
+        id: 1,
+        name: "SPL-SJ-1x8-01",
+        parentNodeId: 1,
+        parentNodeType: "ODF",
+        splitRatio: "1:8",
+        location: "Silicon Valley Blvd Junction",
+        latitude: "37.33900",
+        longitude: "-121.88500",
+        inputPower: "-3.5",
+        outputPower: "-12.8",
+        splitterLoss: "9.3",
+        status: "Active",
+        notes: "Serves TechCorp HQ and surrounding area",
+        createdAt: new Date("2024-01-10"),
+        updatedAt: new Date("2024-01-10"),
+      },
+    ];
+    this.nextSplitterId = 2;
+
+    // Seed Topology - FATs
+    this.fats = [
+      {
+        id: 1,
+        name: "FAT-TechCorp-01",
+        splitterId: 1,
+        location: "TechCorp HQ - Utility Closet",
+        latitude: "37.33874",
+        longitude: "-121.88485",
+        totalPorts: 8,
+        usedPorts: 4,
+        inputPower: "-13.0",
+        status: "Active",
+        installDate: new Date("2024-01-15"),
+        notes: "Serves main building floors 1-4",
+        createdAt: new Date("2024-01-15"),
+        updatedAt: new Date("2024-01-15"),
+      },
+    ];
+    this.nextFatId = 2;
+
+    // Seed Topology - ATBs
+    this.atbs = [
+      {
+        id: 1,
+        name: "ATB-TechCorp-Floor1",
+        fatId: 1,
+        location: "TechCorp HQ - Floor 1",
+        latitude: "37.33874",
+        longitude: "-121.88485",
+        totalPorts: 4,
+        usedPorts: 2,
+        inputPower: "-14.5",
+        status: "Active",
+        installDate: new Date("2024-01-15"),
+        notes: "Serves 4 offices on floor 1",
+        createdAt: new Date("2024-01-15"),
+        updatedAt: new Date("2024-01-15"),
+      },
+    ];
+    this.nextAtbId = 2;
+
+    // Seed Topology - Closures
+    this.closures = [
+      {
+        id: 1,
+        name: "CL-SJ-Junction-01",
+        type: "Underground",
+        parentNodeId: 1,
+        parentNodeType: "ODF",
+        location: "Silicon Valley Blvd & 1st St",
+        latitude: "37.33850",
+        longitude: "-121.88470",
+        fiberCount: 24,
+        spliceCount: 12,
+        inputPower: "-4.0",
+        outputPower: "-5.2",
+        status: "Active",
+        installDate: new Date("2024-01-10"),
+        notes: "Main junction for TechCorp route",
+        createdAt: new Date("2024-01-10"),
+        updatedAt: new Date("2024-01-10"),
+      },
+    ];
+    this.nextClosureId = 2;
+
+    // Seed Topology - Splice Records
+    this.spliceRecords = [
+      {
+        id: 1,
+        closureId: 1,
+        jobId: 1,
+        fiber1: "Blue",
+        fiber2: "Green",
+        spliceLoss: "0.08",
+        spliceQuality: "Excellent",
+        attenuation: "0.05",
+        fusionCount: 1,
+        deviceName: "Fujikura 70S",
+        technicianId: 1,
+        spliceDate: new Date("2024-03-10"),
+        notes: "Clean splice, good quality",
+      },
+    ];
+    this.nextSpliceRecordId = 2;
+
+    // Seed Topology - Power Readings
+    this.powerReadings = [
+      {
+        id: 1,
+        nodeId: 1,
+        nodeType: "OLT",
+        inputPower: "-2.5",
+        outputPower: "-3.0",
+        connectorLoss: "0.3",
+        spliceLoss: "0.2",
+        distanceAttenuation: "0.0",
+        totalLoss: "0.5",
+        status: "Normal",
+        technicianId: 1,
+        readingDate: new Date("2024-03-15"),
+        notes: "All readings within spec",
+      },
+    ];
+    this.nextPowerReadingId = 2;
+
+    // Seed Topology - Fiber Routes
+    this.fiberRoutes = [
+      {
+        id: 1,
+        name: "Route-TechCorp-Main",
+        startNodeId: 1,
+        startNodeType: "OLT",
+        endNodeId: 1,
+        endNodeType: "ATB",
+        waypoints: JSON.stringify([
+          { lat: 37.33874, lng: -121.88485 },
+          { lat: 37.33900, lng: -121.88500 },
+        ]),
+        linearDistance: "450.5",
+        routedDistance: "520.3",
+        cableRequired: "572.0",
+        slackPercentage: "10",
+        splicePoints: 2,
+        estimatedLoss: "2.5",
+        jobId: 1,
+        technicianId: 1,
+        createdAt: new Date("2024-03-10"),
+        notes: "Primary route to TechCorp",
+      },
+    ];
+    this.nextFiberRouteId = 2;
+
+    // Seed Topology - Field Reports
+    this.fieldReports = [
+      {
+        id: 1,
+        jobId: 1,
+        technicianId: 1,
+        reportType: "Deployment Summary",
+        summary: "Successfully deployed fiber to TechCorp HQ. All tests passed.",
+        routeData: JSON.stringify({ distance: 520, splices: 2 }),
+        powerData: JSON.stringify({ inputPower: -2.5, outputPower: -14.5 }),
+        spliceData: JSON.stringify({ totalSplices: 2, avgLoss: 0.08 }),
+        inventoryUsed: JSON.stringify([
+          { item: "Single-mode OS2 Fiber Cable", quantity: 520, unit: "meters" },
+          { item: "SC/UPC Connectors", quantity: 4, unit: "pieces" },
+        ]),
+        gpsTrace: JSON.stringify([
+          { lat: 37.33874, lng: -121.88485, timestamp: "2024-03-10T09:00:00Z" },
+          { lat: 37.33900, lng: -121.88500, timestamp: "2024-03-10T10:30:00Z" },
+        ]),
+        photos: JSON.stringify(["/uploads/techcorp-install-1.jpg", "/uploads/techcorp-install-2.jpg"]),
+        status: "Approved",
+        createdAt: new Date("2024-03-10"),
+        updatedAt: new Date("2024-03-10"),
+      },
+    ];
+    this.nextFieldReportId = 2;
   }
 
   // Users
@@ -1374,76 +1632,488 @@ export class MemoryStorage implements IStorage {
     };
   }
 
-  // Topology Management - Basic stubs for offline support
-  async getOlts(): Promise<Olt[]> { return []; }
-  async getOlt(id: number): Promise<Olt | undefined> { return undefined; }
-  async createOlt(olt: InsertOlt): Promise<Olt> { return {} as Olt; }
-  async updateOlt(id: number, olt: Partial<InsertOlt>): Promise<Olt | undefined> { return undefined; }
-  async deleteOlt(id: number): Promise<boolean> { return false; }
+  // Topology Management - OLTs
+  async getOlts(): Promise<Olt[]> {
+    return this.olts;
+  }
 
-  async getOdfs(): Promise<Odf[]> { return []; }
-  async getOdf(id: number): Promise<Odf | undefined> { return undefined; }
-  async createOdf(odf: InsertOdf): Promise<Odf> { return {} as Odf; }
-  async updateOdf(id: number, odf: Partial<InsertOdf>): Promise<Odf | undefined> { return undefined; }
-  async deleteOdf(id: number): Promise<boolean> { return false; }
+  async getOlt(id: number): Promise<Olt | undefined> {
+    return this.olts.find(o => o.id === id);
+  }
 
-  async getSplitters(): Promise<Splitter[]> { return []; }
-  async getSplitter(id: number): Promise<Splitter | undefined> { return undefined; }
-  async getSplittersByParent(parentNodeId: number, parentNodeType: string): Promise<Splitter[]> { return []; }
-  async createSplitter(splitter: InsertSplitter): Promise<Splitter> { return {} as Splitter; }
-  async updateSplitter(id: number, splitter: Partial<InsertSplitter>): Promise<Splitter | undefined> { return undefined; }
-  async deleteSplitter(id: number): Promise<boolean> { return false; }
+  async createOlt(olt: InsertOlt): Promise<Olt> {
+    const newOlt: Olt = {
+      id: this.nextOltId++,
+      name: olt.name,
+      location: olt.location,
+      capacity: olt.capacity,
+      usedPorts: olt.usedPorts || 0,
+      status: olt.status || "Active",
+      ipAddress: olt.ipAddress || null,
+      vendor: olt.vendor || null,
+      model: olt.model || null,
+      latitude: olt.latitude || null,
+      longitude: olt.longitude || null,
+      notes: olt.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.olts.push(newOlt);
+    return newOlt;
+  }
 
-  async getFats(): Promise<Fat[]> { return []; }
-  async getFat(id: number): Promise<Fat | undefined> { return undefined; }
-  async getFatsBySplitter(splitterId: number): Promise<Fat[]> { return []; }
-  async createFat(fat: InsertFat): Promise<Fat> { return {} as Fat; }
-  async updateFat(id: number, fat: Partial<InsertFat>): Promise<Fat | undefined> { return undefined; }
-  async deleteFat(id: number): Promise<boolean> { return false; }
+  async updateOlt(id: number, olt: Partial<InsertOlt>): Promise<Olt | undefined> {
+    const index = this.olts.findIndex(o => o.id === id);
+    if (index === -1) return undefined;
+    this.olts[index] = { ...this.olts[index], ...olt, updatedAt: new Date() };
+    return this.olts[index];
+  }
 
-  async getAtbs(): Promise<Atb[]> { return []; }
-  async getAtb(id: number): Promise<Atb | undefined> { return undefined; }
-  async getAtbsByFat(fatId: number): Promise<Atb[]> { return []; }
-  async createAtb(atb: InsertAtb): Promise<Atb> { return {} as Atb; }
-  async updateAtb(id: number, atb: Partial<InsertAtb>): Promise<Atb | undefined> { return undefined; }
-  async deleteAtb(id: number): Promise<boolean> { return false; }
+  async deleteOlt(id: number): Promise<boolean> {
+    const index = this.olts.findIndex(o => o.id === id);
+    if (index === -1) return false;
+    this.olts.splice(index, 1);
+    return true;
+  }
 
-  async getClosures(): Promise<Closure[]> { return []; }
-  async getClosure(id: number): Promise<Closure | undefined> { return undefined; }
-  async getClosuresByParent(parentNodeId: number, parentNodeType: string): Promise<Closure[]> { return []; }
-  async createClosure(closure: InsertClosure): Promise<Closure> { return {} as Closure; }
-  async updateClosure(id: number, closure: Partial<InsertClosure>): Promise<Closure | undefined> { return undefined; }
-  async deleteClosure(id: number): Promise<boolean> { return false; }
+  // ODFs
+  async getOdfs(): Promise<Odf[]> {
+    return this.odfs;
+  }
 
-  async getSpliceRecords(): Promise<SpliceRecord[]> { return []; }
-  async getSpliceRecord(id: number): Promise<SpliceRecord | undefined> { return undefined; }
-  async getSpliceRecordsByClosure(closureId: number): Promise<SpliceRecord[]> { return []; }
-  async getSpliceRecordsByJob(jobId: number): Promise<SpliceRecord[]> { return []; }
-  async createSpliceRecord(record: InsertSpliceRecord): Promise<SpliceRecord> { return {} as SpliceRecord; }
-  async updateSpliceRecord(id: number, record: Partial<InsertSpliceRecord>): Promise<SpliceRecord | undefined> { return undefined; }
-  async deleteSpliceRecord(id: number): Promise<boolean> { return false; }
+  async getOdf(id: number): Promise<Odf | undefined> {
+    return this.odfs.find(o => o.id === id);
+  }
 
-  async getPowerReadings(): Promise<PowerReading[]> { return []; }
-  async getPowerReading(id: number): Promise<PowerReading | undefined> { return undefined; }
-  async getPowerReadingsByNode(nodeId: number, nodeType: string): Promise<PowerReading[]> { return []; }
-  async createPowerReading(reading: InsertPowerReading): Promise<PowerReading> { return {} as PowerReading; }
-  async updatePowerReading(id: number, reading: Partial<InsertPowerReading>): Promise<PowerReading | undefined> { return undefined; }
-  async deletePowerReading(id: number): Promise<boolean> { return false; }
+  async createOdf(odf: InsertOdf): Promise<Odf> {
+    const newOdf: Odf = {
+      id: this.nextOdfId++,
+      name: odf.name,
+      oltId: odf.oltId || null,
+      location: odf.location,
+      totalPorts: odf.totalPorts,
+      usedPorts: odf.usedPorts || 0,
+      status: odf.status || "Active",
+      latitude: odf.latitude || null,
+      longitude: odf.longitude || null,
+      notes: odf.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.odfs.push(newOdf);
+    return newOdf;
+  }
 
-  async getFiberRoutes(): Promise<FiberRoute[]> { return []; }
-  async getFiberRoute(id: number): Promise<FiberRoute | undefined> { return undefined; }
-  async getFiberRoutesByJob(jobId: number): Promise<FiberRoute[]> { return []; }
-  async createFiberRoute(route: InsertFiberRoute): Promise<FiberRoute> { return {} as FiberRoute; }
-  async updateFiberRoute(id: number, route: Partial<InsertFiberRoute>): Promise<FiberRoute | undefined> { return undefined; }
-  async deleteFiberRoute(id: number): Promise<boolean> { return false; }
+  async updateOdf(id: number, odf: Partial<InsertOdf>): Promise<Odf | undefined> {
+    const index = this.odfs.findIndex(o => o.id === id);
+    if (index === -1) return undefined;
+    this.odfs[index] = { ...this.odfs[index], ...odf, updatedAt: new Date() };
+    return this.odfs[index];
+  }
 
-  async getFieldReports(): Promise<FieldReport[]> { return []; }
-  async getFieldReport(id: number): Promise<FieldReport | undefined> { return undefined; }
-  async getFieldReportsByJob(jobId: number): Promise<FieldReport[]> { return []; }
-  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> { return []; }
-  async createFieldReport(report: InsertFieldReport): Promise<FieldReport> { return {} as FieldReport; }
-  async updateFieldReport(id: number, report: Partial<InsertFieldReport>): Promise<FieldReport | undefined> { return undefined; }
-  async deleteFieldReport(id: number): Promise<boolean> { return false; }
+  async deleteOdf(id: number): Promise<boolean> {
+    const index = this.odfs.findIndex(o => o.id === id);
+    if (index === -1) return false;
+    this.odfs.splice(index, 1);
+    return true;
+  }
+
+  // Splitters
+  async getSplitters(): Promise<Splitter[]> {
+    return this.splitters;
+  }
+
+  async getSplitter(id: number): Promise<Splitter | undefined> {
+    return this.splitters.find(s => s.id === id);
+  }
+
+  async getSplittersByParent(parentNodeId: number, parentNodeType: string): Promise<Splitter[]> {
+    return this.splitters.filter(s => s.parentNodeId === parentNodeId && s.parentNodeType === parentNodeType);
+  }
+
+  async createSplitter(splitter: InsertSplitter): Promise<Splitter> {
+    const newSplitter: Splitter = {
+      id: this.nextSplitterId++,
+      name: splitter.name,
+      parentNodeId: splitter.parentNodeId || null,
+      parentNodeType: splitter.parentNodeType || null,
+      splitRatio: splitter.splitRatio,
+      location: splitter.location,
+      latitude: splitter.latitude || null,
+      longitude: splitter.longitude || null,
+      inputPower: splitter.inputPower || null,
+      outputPower: splitter.outputPower || null,
+      splitterLoss: splitter.splitterLoss || null,
+      status: splitter.status || "Active",
+      notes: splitter.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.splitters.push(newSplitter);
+    return newSplitter;
+  }
+
+  async updateSplitter(id: number, splitter: Partial<InsertSplitter>): Promise<Splitter | undefined> {
+    const index = this.splitters.findIndex(s => s.id === id);
+    if (index === -1) return undefined;
+    this.splitters[index] = { ...this.splitters[index], ...splitter, updatedAt: new Date() };
+    return this.splitters[index];
+  }
+
+  async deleteSplitter(id: number): Promise<boolean> {
+    const index = this.splitters.findIndex(s => s.id === id);
+    if (index === -1) return false;
+    this.splitters.splice(index, 1);
+    return true;
+  }
+
+  // FATs
+  async getFats(): Promise<Fat[]> {
+    return this.fats;
+  }
+
+  async getFat(id: number): Promise<Fat | undefined> {
+    return this.fats.find(f => f.id === id);
+  }
+
+  async getFatsBySplitter(splitterId: number): Promise<Fat[]> {
+    return this.fats.filter(f => f.splitterId === splitterId);
+  }
+
+  async createFat(fat: InsertFat): Promise<Fat> {
+    const newFat: Fat = {
+      id: this.nextFatId++,
+      name: fat.name,
+      splitterId: fat.splitterId || null,
+      location: fat.location,
+      latitude: fat.latitude || null,
+      longitude: fat.longitude || null,
+      totalPorts: fat.totalPorts || 8,
+      usedPorts: fat.usedPorts || 0,
+      inputPower: fat.inputPower || null,
+      status: fat.status || "Active",
+      installDate: fat.installDate || null,
+      notes: fat.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.fats.push(newFat);
+    return newFat;
+  }
+
+  async updateFat(id: number, fat: Partial<InsertFat>): Promise<Fat | undefined> {
+    const index = this.fats.findIndex(f => f.id === id);
+    if (index === -1) return undefined;
+    this.fats[index] = { ...this.fats[index], ...fat, updatedAt: new Date() };
+    return this.fats[index];
+  }
+
+  async deleteFat(id: number): Promise<boolean> {
+    const index = this.fats.findIndex(f => f.id === id);
+    if (index === -1) return false;
+    this.fats.splice(index, 1);
+    return true;
+  }
+
+  // ATBs
+  async getAtbs(): Promise<Atb[]> {
+    return this.atbs;
+  }
+
+  async getAtb(id: number): Promise<Atb | undefined> {
+    return this.atbs.find(a => a.id === id);
+  }
+
+  async getAtbsByFat(fatId: number): Promise<Atb[]> {
+    return this.atbs.filter(a => a.fatId === fatId);
+  }
+
+  async createAtb(atb: InsertAtb): Promise<Atb> {
+    const newAtb: Atb = {
+      id: this.nextAtbId++,
+      name: atb.name,
+      fatId: atb.fatId || null,
+      location: atb.location,
+      latitude: atb.latitude || null,
+      longitude: atb.longitude || null,
+      totalPorts: atb.totalPorts || 4,
+      usedPorts: atb.usedPorts || 0,
+      inputPower: atb.inputPower || null,
+      status: atb.status || "Active",
+      installDate: atb.installDate || null,
+      notes: atb.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.atbs.push(newAtb);
+    return newAtb;
+  }
+
+  async updateAtb(id: number, atb: Partial<InsertAtb>): Promise<Atb | undefined> {
+    const index = this.atbs.findIndex(a => a.id === id);
+    if (index === -1) return undefined;
+    this.atbs[index] = { ...this.atbs[index], ...atb, updatedAt: new Date() };
+    return this.atbs[index];
+  }
+
+  async deleteAtb(id: number): Promise<boolean> {
+    const index = this.atbs.findIndex(a => a.id === id);
+    if (index === -1) return false;
+    this.atbs.splice(index, 1);
+    return true;
+  }
+
+  // Closures
+  async getClosures(): Promise<Closure[]> {
+    return this.closures;
+  }
+
+  async getClosure(id: number): Promise<Closure | undefined> {
+    return this.closures.find(c => c.id === id);
+  }
+
+  async getClosuresByParent(parentNodeId: number, parentNodeType: string): Promise<Closure[]> {
+    return this.closures.filter(c => c.parentNodeId === parentNodeId && c.parentNodeType === parentNodeType);
+  }
+
+  async createClosure(closure: InsertClosure): Promise<Closure> {
+    const newClosure: Closure = {
+      id: this.nextClosureId++,
+      name: closure.name,
+      type: closure.type,
+      parentNodeId: closure.parentNodeId || null,
+      parentNodeType: closure.parentNodeType || null,
+      location: closure.location,
+      latitude: closure.latitude || null,
+      longitude: closure.longitude || null,
+      fiberCount: closure.fiberCount || 12,
+      spliceCount: closure.spliceCount || 0,
+      inputPower: closure.inputPower || null,
+      outputPower: closure.outputPower || null,
+      status: closure.status || "Active",
+      installDate: closure.installDate || null,
+      notes: closure.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.closures.push(newClosure);
+    return newClosure;
+  }
+
+  async updateClosure(id: number, closure: Partial<InsertClosure>): Promise<Closure | undefined> {
+    const index = this.closures.findIndex(c => c.id === id);
+    if (index === -1) return undefined;
+    this.closures[index] = { ...this.closures[index], ...closure, updatedAt: new Date() };
+    return this.closures[index];
+  }
+
+  async deleteClosure(id: number): Promise<boolean> {
+    const index = this.closures.findIndex(c => c.id === id);
+    if (index === -1) return false;
+    this.closures.splice(index, 1);
+    return true;
+  }
+
+  // Splice Records
+  async getSpliceRecords(): Promise<SpliceRecord[]> {
+    return this.spliceRecords;
+  }
+
+  async getSpliceRecord(id: number): Promise<SpliceRecord | undefined> {
+    return this.spliceRecords.find(r => r.id === id);
+  }
+
+  async getSpliceRecordsByClosure(closureId: number): Promise<SpliceRecord[]> {
+    return this.spliceRecords.filter(r => r.closureId === closureId);
+  }
+
+  async getSpliceRecordsByJob(jobId: number): Promise<SpliceRecord[]> {
+    return this.spliceRecords.filter(r => r.jobId === jobId);
+  }
+
+  async createSpliceRecord(record: InsertSpliceRecord): Promise<SpliceRecord> {
+    const newRecord: SpliceRecord = {
+      id: this.nextSpliceRecordId++,
+      closureId: record.closureId || null,
+      jobId: record.jobId || null,
+      fiber1: record.fiber1,
+      fiber2: record.fiber2,
+      spliceLoss: record.spliceLoss || null,
+      spliceQuality: record.spliceQuality || null,
+      attenuation: record.attenuation || null,
+      fusionCount: record.fusionCount || null,
+      deviceName: record.deviceName || null,
+      technicianId: record.technicianId || null,
+      spliceDate: new Date(),
+      notes: record.notes || null,
+    };
+    this.spliceRecords.push(newRecord);
+    return newRecord;
+  }
+
+  async updateSpliceRecord(id: number, record: Partial<InsertSpliceRecord>): Promise<SpliceRecord | undefined> {
+    const index = this.spliceRecords.findIndex(r => r.id === id);
+    if (index === -1) return undefined;
+    this.spliceRecords[index] = { ...this.spliceRecords[index], ...record };
+    return this.spliceRecords[index];
+  }
+
+  async deleteSpliceRecord(id: number): Promise<boolean> {
+    const index = this.spliceRecords.findIndex(r => r.id === id);
+    if (index === -1) return false;
+    this.spliceRecords.splice(index, 1);
+    return true;
+  }
+
+  // Power Readings
+  async getPowerReadings(): Promise<PowerReading[]> {
+    return this.powerReadings;
+  }
+
+  async getPowerReading(id: number): Promise<PowerReading | undefined> {
+    return this.powerReadings.find(r => r.id === id);
+  }
+
+  async getPowerReadingsByNode(nodeId: number, nodeType: string): Promise<PowerReading[]> {
+    return this.powerReadings.filter(r => r.nodeId === nodeId && r.nodeType === nodeType);
+  }
+
+  async createPowerReading(reading: InsertPowerReading): Promise<PowerReading> {
+    const newReading: PowerReading = {
+      id: this.nextPowerReadingId++,
+      nodeId: reading.nodeId,
+      nodeType: reading.nodeType,
+      inputPower: reading.inputPower || null,
+      outputPower: reading.outputPower || null,
+      connectorLoss: reading.connectorLoss || null,
+      spliceLoss: reading.spliceLoss || null,
+      distanceAttenuation: reading.distanceAttenuation || null,
+      totalLoss: reading.totalLoss || null,
+      status: reading.status || "Normal",
+      technicianId: reading.technicianId || null,
+      readingDate: new Date(),
+      notes: reading.notes || null,
+    };
+    this.powerReadings.push(newReading);
+    return newReading;
+  }
+
+  async updatePowerReading(id: number, reading: Partial<InsertPowerReading>): Promise<PowerReading | undefined> {
+    const index = this.powerReadings.findIndex(r => r.id === id);
+    if (index === -1) return undefined;
+    this.powerReadings[index] = { ...this.powerReadings[index], ...reading };
+    return this.powerReadings[index];
+  }
+
+  async deletePowerReading(id: number): Promise<boolean> {
+    const index = this.powerReadings.findIndex(r => r.id === id);
+    if (index === -1) return false;
+    this.powerReadings.splice(index, 1);
+    return true;
+  }
+
+  // Fiber Routes
+  async getFiberRoutes(): Promise<FiberRoute[]> {
+    return this.fiberRoutes;
+  }
+
+  async getFiberRoute(id: number): Promise<FiberRoute | undefined> {
+    return this.fiberRoutes.find(r => r.id === id);
+  }
+
+  async getFiberRoutesByJob(jobId: number): Promise<FiberRoute[]> {
+    return this.fiberRoutes.filter(r => r.jobId === jobId);
+  }
+
+  async createFiberRoute(route: InsertFiberRoute): Promise<FiberRoute> {
+    const newRoute: FiberRoute = {
+      id: this.nextFiberRouteId++,
+      name: route.name,
+      startNodeId: route.startNodeId || null,
+      startNodeType: route.startNodeType || null,
+      endNodeId: route.endNodeId || null,
+      endNodeType: route.endNodeType || null,
+      waypoints: route.waypoints || null,
+      linearDistance: route.linearDistance || null,
+      routedDistance: route.routedDistance || null,
+      cableRequired: route.cableRequired || null,
+      slackPercentage: route.slackPercentage || null,
+      splicePoints: route.splicePoints || 0,
+      estimatedLoss: route.estimatedLoss || null,
+      jobId: route.jobId || null,
+      technicianId: route.technicianId || null,
+      createdAt: new Date(),
+      notes: route.notes || null,
+    };
+    this.fiberRoutes.push(newRoute);
+    return newRoute;
+  }
+
+  async updateFiberRoute(id: number, route: Partial<InsertFiberRoute>): Promise<FiberRoute | undefined> {
+    const index = this.fiberRoutes.findIndex(r => r.id === id);
+    if (index === -1) return undefined;
+    this.fiberRoutes[index] = { ...this.fiberRoutes[index], ...route };
+    return this.fiberRoutes[index];
+  }
+
+  async deleteFiberRoute(id: number): Promise<boolean> {
+    const index = this.fiberRoutes.findIndex(r => r.id === id);
+    if (index === -1) return false;
+    this.fiberRoutes.splice(index, 1);
+    return true;
+  }
+
+  // Field Reports
+  async getFieldReports(): Promise<FieldReport[]> {
+    return this.fieldReports;
+  }
+
+  async getFieldReport(id: number): Promise<FieldReport | undefined> {
+    return this.fieldReports.find(r => r.id === id);
+  }
+
+  async getFieldReportsByJob(jobId: number): Promise<FieldReport[]> {
+    return this.fieldReports.filter(r => r.jobId === jobId);
+  }
+
+  async getFieldReportsByTechnician(technicianId: number): Promise<FieldReport[]> {
+    return this.fieldReports.filter(r => r.technicianId === technicianId);
+  }
+
+  async createFieldReport(report: InsertFieldReport): Promise<FieldReport> {
+    const newReport: FieldReport = {
+      id: this.nextFieldReportId++,
+      jobId: report.jobId,
+      technicianId: report.technicianId,
+      reportType: report.reportType,
+      summary: report.summary,
+      routeData: report.routeData || null,
+      powerData: report.powerData || null,
+      spliceData: report.spliceData || null,
+      inventoryUsed: report.inventoryUsed || null,
+      gpsTrace: report.gpsTrace || null,
+      photos: report.photos || null,
+      status: report.status || "Draft",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.fieldReports.push(newReport);
+    return newReport;
+  }
+
+  async updateFieldReport(id: number, report: Partial<InsertFieldReport>): Promise<FieldReport | undefined> {
+    const index = this.fieldReports.findIndex(r => r.id === id);
+    if (index === -1) return undefined;
+    this.fieldReports[index] = { ...this.fieldReports[index], ...report, updatedAt: new Date() };
+    return this.fieldReports[index];
+  }
+
+  async deleteFieldReport(id: number): Promise<boolean> {
+    const index = this.fieldReports.findIndex(r => r.id === id);
+    if (index === -1) return false;
+    this.fieldReports.splice(index, 1);
+    return true;
+  }
 }
 
 // Use MemoryStorage for offline functionality
