@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { jobsApi } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import type { Client } from "@shared/schema";
 import { 
   BarChart, 
   Bar, 
@@ -16,12 +17,81 @@ import {
 } from "recharts";
 import { Download, Mail } from "lucide-react";
 import { format, subDays } from "date-fns";
+import { generatePDFReport, exportJobsToCSV } from "@/lib/pdfExport";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Reports() {
+  const { toast } = useToast();
+
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
     queryFn: jobsApi.getAll,
   });
+
+  const { data: clients = [] } = useQuery<Client[]>({
+    queryKey: ['/api/clients'],
+  });
+
+  const handleExportPDF = () => {
+    try {
+      const clientMap = new Map(clients.map(c => [c.id, c.name]));
+      const jobsWithClients = jobs.map(job => ({
+        id: job.id,
+        clientName: clientMap.get(job.clientId) || 'Unknown Client',
+        address: job.address,
+        type: job.type,
+        status: job.status,
+        scheduledDate: new Date(job.scheduledDate),
+        notes: job.notes,
+      }));
+
+      const dateRange = {
+        start: subDays(new Date(), 7),
+        end: new Date(),
+      };
+
+      generatePDFReport({ jobs: jobsWithClients, dateRange }, "Weekly Field Report");
+      
+      toast({
+        title: "PDF Exported",
+        description: "Your report has been downloaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate PDF report. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      const clientMap = new Map(clients.map(c => [c.id, c.name]));
+      const jobsWithClients = jobs.map(job => ({
+        id: job.id,
+        clientName: clientMap.get(job.clientId) || 'Unknown Client',
+        address: job.address,
+        type: job.type,
+        status: job.status,
+        scheduledDate: new Date(job.scheduledDate),
+        notes: job.notes,
+      }));
+
+      exportJobsToCSV(jobsWithClients);
+      
+      toast({
+        title: "CSV Exported",
+        description: "Your data has been exported successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export CSV. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Calculate job data for last 7 days
   const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -57,10 +127,19 @@ export default function Reports() {
           <p className="text-muted-foreground">Weekly performance and job statistics</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-border/50">
-            <Mail className="mr-2 h-4 w-4" /> Email
+          <Button 
+            variant="outline" 
+            className="border-border/50"
+            onClick={handleExportCSV}
+            data-testid="button-export-csv"
+          >
+            <Download className="mr-2 h-4 w-4" /> Export CSV
           </Button>
-          <Button className="bg-primary text-black hover:bg-primary/90">
+          <Button 
+            className="bg-primary text-black hover:bg-primary/90"
+            onClick={handleExportPDF}
+            data-testid="button-export-pdf"
+          >
             <Download className="mr-2 h-4 w-4" /> Export PDF
           </Button>
         </div>

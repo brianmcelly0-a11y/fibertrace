@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { offlineStorage } from "./offlineStorage";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -12,6 +13,11 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  if (!navigator.onLine && (method === 'POST' || method === 'PATCH' || method === 'DELETE')) {
+    offlineStorage.addToSyncQueue(url, method as any, data);
+    return new Response(JSON.stringify({ queued: true }), { status: 202 });
+  }
+
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
@@ -23,13 +29,43 @@ export async function apiRequest(
   return res;
 }
 
+type CacheKey = 'jobs' | 'inventory' | 'clients' | 'olts' | 'splitters' | 'fats' | 'atbs' | 'closures' | 'spliceRecords' | 'powerReadings' | 'fiberRoutes' | 'fieldReports';
+
+const CACHE_KEY_MAP: Record<string, CacheKey> = {
+  '/api/jobs': 'jobs',
+  '/api/inventory': 'inventory',
+  '/api/clients': 'clients',
+  '/api/olts': 'olts',
+  '/api/splitters': 'splitters',
+  '/api/fats': 'fats',
+  '/api/atbs': 'atbs',
+  '/api/closures': 'closures',
+  '/api/splice-records': 'spliceRecords',
+  '/api/power-readings': 'powerReadings',
+  '/api/fiber-routes': 'fiberRoutes',
+  '/api/field-reports': 'fieldReports',
+};
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const endpoint = Array.isArray(queryKey) && queryKey.length > 0 
+      ? (queryKey[0] as string)
+      : (queryKey as string);
+    
+    if (!navigator.onLine) {
+      const cacheKey = CACHE_KEY_MAP[endpoint];
+      if (cacheKey) {
+        const cachedData = offlineStorage.getCachedData(cacheKey);
+        console.log(`Using cached data for ${endpoint}`);
+        return cachedData as any;
+      }
+    }
+
+    const res = await fetch(endpoint, {
       credentials: "include",
     });
 
@@ -38,7 +74,14 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const data = await res.json();
+    
+    const cacheKey = CACHE_KEY_MAP[endpoint];
+    if (cacheKey && Array.isArray(data)) {
+      offlineStorage.cacheData(cacheKey, data);
+    }
+    
+    return data;
   };
 
 export const queryClient = new QueryClient({
