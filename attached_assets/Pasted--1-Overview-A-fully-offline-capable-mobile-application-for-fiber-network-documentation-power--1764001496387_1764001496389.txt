@@ -1,0 +1,371 @@
+‎1. Overview
+‎
+‎A fully offline-capable mobile application for fiber network documentation, power mapping, topology management, BT readings, asset tracking, route distance calculation, and automated reporting. Designed for GPON/FTTH/FTTx field engineers, the system allows map-based planning, live field updates, and synchronized storage when the device reconnects online.
+‎
+‎
+‎---
+‎
+‎2. Core Modules & Features
+‎
+‎A. Authentication
+‎
+‎Login screen with:
+‎
+‎Email/Username
+‎
+‎Password field
+‎
+‎Eye icon to toggle password visibility
+‎
+‎“Forgot Password”
+‎
+‎Register link
+‎
+‎
+‎Register screen with basic user info
+‎
+‎Local offline login cache
+‎
+‎Auto-sync of user account when internet is available
+‎
+‎
+‎
+‎---
+‎
+‎B. Dashboard
+‎
+‎Home screen with large action tiles:
+‎
+‎Network Topology
+‎
+‎Power Mapping
+‎
+‎Closures / FATS / ATBs / Domes
+‎
+‎Nodes & Splitters Library
+‎
+‎Bluetooth Splicer Sync
+‎
+‎Offline Map Explorer
+‎
+‎Automatic Distance Calculator
+‎
+‎Inventory & Tools Manager
+‎
+‎Reports & Job Log
+‎
+‎
+‎A top bar includes:
+‎
+‎Profile icon
+‎
+‎Sync status indicator
+‎
+‎Search icon
+‎
+‎
+‎
+‎---
+‎
+‎3. GPON / FTTx Topology Manager
+‎
+‎Supports the full standard GPON structure from OLT → Splitters → Distribution → Drops → Endpoints.
+‎
+‎Includes:
+‎
+‎OLT list
+‎
+‎ODF frames and ports
+‎
+‎Splitters (1:2, 1:4, 1:8, 1:16, 1:32, 1:64 etc.)
+‎
+‎Power loss values automatically applied
+‎
+‎FDT / FAT
+‎
+‎ATB termination boxes
+‎
+‎Dome closures
+‎
+‎Underground closures
+‎
+‎Aerial closures
+‎
+‎All standard fiber nodes
+‎
+‎
+‎Each item displays:
+‎
+‎Location
+‎
+‎Power Input / Output
+‎
+‎Loss table
+‎
+‎Connected segments
+‎
+‎Status
+‎
+‎Notes and attachments
+‎
+‎
+‎Selecting a node shows details in a pop-up panel on the map.
+‎
+‎
+‎---
+‎
+‎4. Power Mapping & Signal Analysis
+‎
+‎For each node, the user can:
+‎
+‎Enter Input Power
+‎
+‎Select splitter type
+‎
+‎Auto-compute output power
+‎
+‎Add losses:
+‎
+‎Connector losses
+‎
+‎Splice losses
+‎
+‎Splitter coefficient loss
+‎
+‎Distance attenuation
+‎
+‎
+‎Visual map preview of power levels using color coding
+‎
+‎Export power chain report
+‎
+‎
+‎
+‎---
+‎
+‎5. Bluetooth Data Integration (Splicer)
+‎
+‎When connected to a supported splicer via Bluetooth:
+‎
+‎Splice quality readings
+‎
+‎Attenuation
+‎
+‎Splice loss (dB)
+‎
+‎Fusion count
+‎
+‎Joint status
+‎
+‎
+‎Automatically updates:
+‎
+‎The closure record
+‎
+‎The splitter or node record
+‎
+‎Associated report for the day
+‎
+‎
+‎
+‎---
+‎
+‎6. Offline Map Module
+‎
+‎An entirely offline map engine with:
+‎
+‎GPS tracking
+‎
+‎Tap-to-place markers
+‎
+‎OLT, Splitter, FAT, Dome, ATB icons
+‎
+‎Path drawing for fiber lines
+‎
+‎Power node pop-ups
+‎
+‎Daily route recording
+‎
+‎Adding new infrastructure directly from the map
+‎
+‎Continuous map updates with freshly traced lines
+‎
+‎
+‎Markers include:
+‎
+‎Color-coded power state
+‎
+‎Power-in / power-out values
+‎
+‎Node type icon
+‎
+‎
+‎
+‎---
+‎
+‎7. Automatic Distance Calculator
+‎
+‎Supports:
+‎
+‎Point-to-point distance
+‎
+‎Multi-segment routing (OLT → Splitter → FAT → House)
+‎
+‎GPS walk tracing distance
+‎
+‎Linear vs. routed distance
+‎
+‎Slack percentage calculation (auto-added)
+‎
+‎
+‎Outputs:
+‎
+‎Start → Node → FAT → ATB → Drop length  
+‎Total cable required  
+‎Splice points  
+‎Estimated losses
+‎
+‎Automatically saved in reports and linked to map objects.
+‎
+‎
+‎---
+‎
+‎8. Inventory & Tools Manager
+‎
+‎Tracks all tools and materials:
+‎
+‎Fiber cables (types + lengths)
+‎
+‎Splitters
+‎
+‎FATs, ATBs, closures
+‎
+‎Splice sleeves
+‎
+‎Pigtails
+‎
+‎Adapters
+‎
+‎Drop cables
+‎
+‎ONTs/routers
+‎
+‎Power meters & light sources
+‎
+‎Splicers
+‎
+‎POEs & switches (if applicable)
+‎
+‎
+‎Each inventory item includes:
+‎
+‎Quantity
+‎
+‎Status (new/used/damaged)
+‎
+‎Deployment location
+‎
+‎Assigned technician
+‎
+‎Movement history
+‎
+‎
+‎
+‎---
+‎
+‎9. Reports & Job Logs
+‎
+‎Generates automatic field and daily job reports:
+‎
+‎Route distance reports
+‎
+‎Splicer/Bluetooth readings
+‎
+‎Power mapping chain
+‎
+‎Fiber deployment summary
+‎
+‎Closures/FAT/ATB updates
+‎
+‎Node additions
+‎
+‎Inventory usage
+‎
+‎GPS traces
+‎
+‎Photos & notes
+‎
+‎
+‎Reports exportable in:
+‎
+‎PDF
+‎
+‎JSON
+‎
+‎CSV
+‎
+‎
+‎Stored offline & synced to server when online.
+‎
+‎
+‎---
+‎
+‎10. Cloud Sync (Optional)
+‎
+‎When connected:
+‎
+‎Uploads nodes
+‎
+‎Uploads map updates
+‎
+‎Syncs inventory
+‎
+‎Syncs job logs
+‎
+‎Multi-user collaboration with centralized storage
+‎
+‎
+‎Offline-first design ensures no data loss.
+‎
+‎
+‎---
+‎
+‎11. Navigation Flow
+‎
+‎1. Login / Register
+‎
+‎
+‎2. Dashboard
+‎
+‎
+‎3. Choose a module:
+‎
+‎Map → Nodes → Power → Report
+‎
+‎Inventory → Deploy tool → Update → Save
+‎
+‎Splicer Sync → Auto Update Node
+‎
+‎Distance Calculator → Save route
+‎
+‎
+‎
+‎4. Export or Sync
+‎
+‎
+‎
+‎
+‎---
+‎
+‎12. Additional WOW Features
+‎
+‎Auto optical power warning system (color-based)
+‎
+‎Recommended nearest FAT or closure
+‎
+‎Smart suggested routes to reduce fiber usage
+‎
+‎Auto backup locally
+‎
+‎Fast search for jobs   this is the app description benchmark  and implement the remaining features  for full functionality 
+‎
