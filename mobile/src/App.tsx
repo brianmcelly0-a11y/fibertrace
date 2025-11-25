@@ -4,6 +4,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { MapScreen } from './screens/MapScreen';
 import { JobsScreen } from './screens/JobsScreen';
+import { DashboardScreen } from './screens/DashboardScreen';
+import { NodeManagementScreen } from './screens/NodeManagementScreen';
+import { RouteManagementScreen } from './screens/RouteManagementScreen';
 import { colors } from './theme/colors';
 import { initializeOfflineStorage } from './lib/offlineStorage';
 import { offlineSync } from './lib/offlineSync';
@@ -63,11 +66,35 @@ export default function App() {
           }}
         >
           <Tab.Screen
+            name="Dashboard"
+            component={DashboardScreen}
+            options={{
+              title: 'Dashboard',
+              tabBarLabel: 'Dashboard',
+            }}
+          />
+          <Tab.Screen
             name="Map"
             component={MapScreen}
             options={{
               title: 'FiberTrace Map',
               tabBarLabel: 'Map',
+            }}
+          />
+          <Tab.Screen
+            name="Nodes"
+            component={NodeManagementScreen}
+            options={{
+              title: 'Node Management',
+              tabBarLabel: 'Nodes',
+            }}
+          />
+          <Tab.Screen
+            name="Routes"
+            component={RouteManagementScreen}
+            options={{
+              title: 'Route Management',
+              tabBarLabel: 'Routes',
             }}
           />
           <Tab.Screen
