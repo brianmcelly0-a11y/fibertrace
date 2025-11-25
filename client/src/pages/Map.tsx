@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Layers, Navigation, Play, Pause, Save, AlertCircle, Activity, Zap } from "lucide-react";
+import { Plus, Layers, Navigation, Play, Pause, Save, AlertCircle, Activity, Zap, X, Edit, Link2, FileText } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, gpsRoutesApi, authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -103,6 +103,12 @@ export default function Map() {
   const toggleLayer = (layer: keyof typeof layerVisibility) => {
     setLayerVisibility(prev => ({ ...prev, [layer]: !prev[layer] }));
   };
+
+  // Selected node state for details panel
+  const [selectedNode, setSelectedNode] = useState<{
+    type: 'OLT' | 'Splitter' | 'FAT' | 'ATB' | 'Closure';
+    data: any;
+  } | null>(null);
 
   // Check authentication first
   const { data: user, isLoading: authLoading, error: authError } = useQuery({
@@ -499,21 +505,10 @@ export default function Map() {
               position={[parseFloat(olt.latitude), parseFloat(olt.longitude)]}
               icon={createNodeIcon('OLT')}
               data-testid={`marker-olt-${olt.id}`}
-            >
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-slate-900">{olt.name}</h3>
-                  <Badge className="text-xs mt-1">OLT</Badge>
-                  <div className="mt-2 text-xs space-y-1">
-                    <p><strong>Location:</strong> {olt.location}</p>
-                    <p><strong>Capacity:</strong> {olt.capacity} ports</p>
-                    <p><strong>Used:</strong> {olt.usedPorts}/{olt.capacity}</p>
-                    <p><strong>Status:</strong> <Badge variant={olt.status === 'Active' ? 'default' : 'secondary'}>{olt.status}</Badge></p>
-                    {olt.vendor && <p><strong>Vendor:</strong> {olt.vendor}</p>}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+              eventHandlers={{
+                click: () => setSelectedNode({ type: 'OLT', data: olt })
+              }}
+            />
           );
         })}
 
@@ -528,24 +523,10 @@ export default function Map() {
               position={[parseFloat(splitter.latitude), parseFloat(splitter.longitude)]}
               icon={createNodeIcon('Splitter', powerInfo.color)}
               data-testid={`marker-splitter-${splitter.id}`}
-            >
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-slate-900">{splitter.name}</h3>
-                  <Badge className="text-xs mt-1">Splitter {splitter.splitRatio}</Badge>
-                  <div className="mt-2 text-xs space-y-1">
-                    <p><strong>Location:</strong> {splitter.location}</p>
-                    {splitter.inputPower && (
-                      <p className="flex items-center gap-1">
-                        <Zap className="h-3 w-3" style={{color: powerInfo.color}} />
-                        <strong>Power:</strong> {splitter.inputPower} dBm ({powerInfo.status})
-                      </p>
-                    )}
-                    <p><strong>Status:</strong> <Badge variant={splitter.status === 'Active' ? 'default' : 'secondary'}>{splitter.status}</Badge></p>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+              eventHandlers={{
+                click: () => setSelectedNode({ type: 'Splitter', data: splitter })
+              }}
+            />
           );
         })}
 
@@ -560,25 +541,10 @@ export default function Map() {
               position={[parseFloat(fat.latitude), parseFloat(fat.longitude)]}
               icon={createNodeIcon('FAT', powerInfo.color)}
               data-testid={`marker-fat-${fat.id}`}
-            >
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-slate-900">{fat.name}</h3>
-                  <Badge className="text-xs mt-1">FAT</Badge>
-                  <div className="mt-2 text-xs space-y-1">
-                    <p><strong>Location:</strong> {fat.location}</p>
-                    <p><strong>Ports:</strong> {fat.usedPorts}/{fat.totalPorts}</p>
-                    {fat.inputPower && (
-                      <p className="flex items-center gap-1">
-                        <Zap className="h-3 w-3" style={{color: powerInfo.color}} />
-                        <strong>Power:</strong> {fat.inputPower} dBm ({powerInfo.status})
-                      </p>
-                    )}
-                    <p><strong>Status:</strong> <Badge variant={fat.status === 'Active' ? 'default' : 'secondary'}>{fat.status}</Badge></p>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+              eventHandlers={{
+                click: () => setSelectedNode({ type: 'FAT', data: fat })
+              }}
+            />
           );
         })}
 
@@ -593,25 +559,10 @@ export default function Map() {
               position={[parseFloat(atb.latitude), parseFloat(atb.longitude)]}
               icon={createNodeIcon('ATB', powerInfo.color)}
               data-testid={`marker-atb-${atb.id}`}
-            >
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-slate-900">{atb.name}</h3>
-                  <Badge className="text-xs mt-1">ATB</Badge>
-                  <div className="mt-2 text-xs space-y-1">
-                    <p><strong>Location:</strong> {atb.location}</p>
-                    <p><strong>Ports:</strong> {atb.usedPorts}/{atb.totalPorts}</p>
-                    {atb.inputPower && (
-                      <p className="flex items-center gap-1">
-                        <Zap className="h-3 w-3" style={{color: powerInfo.color}} />
-                        <strong>Power:</strong> {atb.inputPower} dBm ({powerInfo.status})
-                      </p>
-                    )}
-                    <p><strong>Status:</strong> <Badge variant={atb.status === 'Active' ? 'default' : 'secondary'}>{atb.status}</Badge></p>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+              eventHandlers={{
+                click: () => setSelectedNode({ type: 'ATB', data: atb })
+              }}
+            />
           );
         })}
 
@@ -626,26 +577,10 @@ export default function Map() {
               position={[parseFloat(closure.latitude), parseFloat(closure.longitude)]}
               icon={createNodeIcon(closure.type, powerInfo.color)}
               data-testid={`marker-closure-${closure.id}`}
-            >
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-slate-900">{closure.name}</h3>
-                  <Badge className="text-xs mt-1">{closure.type} Closure</Badge>
-                  <div className="mt-2 text-xs space-y-1">
-                    <p><strong>Location:</strong> {closure.location}</p>
-                    <p><strong>Fibers:</strong> {closure.fiberCount}</p>
-                    <p><strong>Splices:</strong> {closure.spliceCount}</p>
-                    {closure.inputPower && (
-                      <p className="flex items-center gap-1">
-                        <Zap className="h-3 w-3" style={{color: powerInfo.color}} />
-                        <strong>Power:</strong> {closure.inputPower} dBm ({powerInfo.status})
-                      </p>
-                    )}
-                    <p><strong>Status:</strong> <Badge variant={closure.status === 'Active' ? 'default' : 'secondary'}>{closure.status}</Badge></p>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+              eventHandlers={{
+                click: () => setSelectedNode({ type: 'Closure', data: closure })
+              }}
+            />
           );
         })}
       </MapContainer>
