@@ -177,11 +177,17 @@ export const meterApi = {
   },
 };
 
-// GPS Routes API
+// GPS Routes API (Phase 3)
 export const gpsRoutesApi = {
   async getAll() {
     const res = await fetch(`${API_BASE}/fiber-routes`);
     if (!res.ok) throw new Error("Failed to fetch GPS routes");
+    return res.json();
+  },
+
+  async getByJob(jobId: number) {
+    const res = await fetch(`${API_BASE}/fiber-routes/job/${jobId}`);
+    if (!res.ok) throw new Error("Failed to fetch routes for job");
     return res.json();
   },
 
@@ -192,6 +198,25 @@ export const gpsRoutesApi = {
       body: JSON.stringify(route),
     });
     if (!res.ok) throw new Error("Failed to create GPS route");
+    return res.json();
+  },
+};
+
+// Jobs Map API (Phase 3 - Public access)
+export const jobsMapApi = {
+  async getAll() {
+    const res = await fetch(`${API_BASE}/jobs`);
+    if (!res.ok) throw new Error("Failed to fetch jobs");
+    return res.json();
+  },
+
+  async create(job: any) {
+    const res = await fetch(`${API_BASE}/jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(job),
+    });
+    if (!res.ok) throw new Error("Failed to create job");
     return res.json();
   },
 };

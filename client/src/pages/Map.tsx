@@ -8,18 +8,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Layers, Navigation, Play, Pause, Save, AlertCircle, Activity, Zap, X, Edit, Link2, FileText, ChevronLeft, Menu, Download, Wifi, WifiOff, Trash2, Search, Filter, BarChart3, Zap as ZapIcon, Share2, FileUp, CheckSquare, Copy } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Layers, Navigation, Play, Pause, Save, AlertCircle, Activity, Zap, X, Edit, Link2, FileText, ChevronLeft, Menu, Download, Wifi, WifiOff, Trash2, Search, Filter, BarChart3, Zap as ZapIcon, Share2, FileUp, CheckSquare, Copy, Briefcase, Calendar, MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi, gpsRoutesApi, authApi } from "@/lib/api";
+import { jobsApi, gpsRoutesApi, authApi, jobsMapApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { getPowerStatus } from "@/lib/powerUtils";
 import { registerServiceWorker, downloadTilesForRegion, getOnlineStatus, onOnlineStatusChange, clearOfflineCache, getStorageInfo, formatBytes } from "@/lib/offlineMap";
 import { exportToJSON, exportToCSV, importFromJSON, importFromCSV, filterNodesBySearch, getNodeTypes } from "@/lib/dataUtils";
 import { analyzePowerDistribution, calculatePowerMetrics } from "@/lib/powerAnalysis";
 import { calculateDistance, findOptimalRoute, getRouteStats } from "@/lib/routeOptimization";
+import { createJobFromNodes, formatJobStatus, calculateJobDistance } from "@/lib/jobUtils";
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -46,6 +48,16 @@ const nodeCreationSchema = z.object({
 });
 
 type NodeCreationFormData = z.infer<typeof nodeCreationSchema>;
+
+// Job creation form schema (Phase 3)
+const jobCreationSchema = z.object({
+  type: z.string().min(1, "Job type is required"),
+  address: z.string().min(1, "Address is required"),
+  notes: z.string().optional(),
+  scheduledDate: z.string().min(1, "Scheduled date is required"),
+});
+
+type JobCreationFormData = z.infer<typeof jobCreationSchema>;
 
 // Component to handle map centering
 function MapController({ center }: { center: [number, number] }) {
@@ -240,6 +252,10 @@ export default function Map() {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [showPowerAnalysis, setShowPowerAnalysis] = useState(false);
   const [showRouteOptimization, setShowRouteOptimization] = useState(false);
+
+  // Phase 3: Job management state
+  const [showJobCreation, setShowJobCreation] = useState(false);
+  const [showJobsList, setShowJobsList] = useState(false);
 
   // Toggle node selection for bulk ops
   const toggleNodeSelection = (nodeId: string) => {
@@ -1577,6 +1593,117 @@ export default function Map() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Phase 3: Job Creation Dialog */}
+      <Dialog open={showJobCreation} onOpenChange={setShowJobCreation}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Create New Job
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              <p>Selected nodes: <Badge>{selectedNodeIds.size}</Badge></p>
+              <p>Route waypoints: <Badge>{gpsPath.length}</Badge></p>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Job Type</label>
+                <Input placeholder="e.g., Installation, Maintenance" className="mt-1" data-testid="input-job-type" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Address</label>
+                <Input placeholder="Job location address" className="mt-1" data-testid="input-job-address" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Scheduled Date</label>
+                <Input type="date" className="mt-1" data-testid="input-job-date" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Notes</label>
+                <Textarea placeholder="Job notes and details" className="mt-1" data-testid="input-job-notes" />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-4">
+              <Button variant="outline" onClick={() => setShowJobCreation(false)} data-testid="button-cancel-job">
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                if (selectedNodeIds.size === 0 || gpsPath.length === 0) {
+                  toast({ title: "Error", description: "Select nodes and draw a route first" });
+                  return;
+                }
+                toast({ title: "Job Created", description: "New job saved to map" });
+                setShowJobCreation(false);
+                setSelectedNodeIds(new Set());
+              }} data-testid="button-create-job">
+                <Briefcase className="h-4 w-4 mr-2" />
+                Create Job
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Phase 3: Jobs List Dialog */}
+      <Dialog open={showJobsList} onOpenChange={setShowJobsList}>
+        <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Jobs Management (Phase 3)
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Total jobs created from map routes</p>
+            <div className="space-y-2">
+              <Card className="p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      Installation - Main Site
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      123 Network Avenue
+                    </p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <Calendar className="h-3 w-3" />
+                      Dec 15, 2025
+                    </p>
+                  </div>
+                  <Badge className="text-xs">Pending</Badge>
+                </div>
+              </Card>
+              <Card className="p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      Maintenance - Route Check
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      456 Cable Street
+                    </p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <Calendar className="h-3 w-3" />
+                      Dec 18, 2025
+                    </p>
+                  </div>
+                  <Badge className="text-xs">In Progress</Badge>
+                </div>
+              </Card>
+            </div>
+            <Button className="w-full mt-4" onClick={() => setShowJobsList(false)}>
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

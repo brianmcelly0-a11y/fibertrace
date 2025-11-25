@@ -210,14 +210,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const jobs = await storage.getJobsByTechnician(userId);
         res.json(jobs);
       } else {
-        res.json([]);
+        // Return all jobs for public access (Phase 3)
+        const allJobs = await storage.getJobs();
+        res.json(allJobs);
       }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
 
-  app.get("/api/jobs/:id", requireAuth, async (req, res) => {
+  app.get("/api/jobs/:id", async (req, res) => {
     try {
       const job = await storage.getJob(parseInt(req.params.id));
       if (!job) {
@@ -229,11 +231,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/jobs", requireAuth, async (req, res) => {
+  // Public job creation endpoint (Phase 3)
+  app.post("/api/jobs", async (req, res) => {
     try {
+      // Use session user if available, otherwise use default technician (1)
+      const technicianId = req.session?.userId || 1;
       const data = insertJobSchema.parse({
         ...req.body,
-        technicianId: req.session!.userId,
+        technicianId,
       });
       const job = await storage.createJob(data);
       res.status(201).json(job);
@@ -721,8 +726,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Fiber Routes
-  app.get("/api/fiber-routes", requireAuth, async (req, res) => {
+  // Fiber Routes (Phase 3 - Public access)
+  app.get("/api/fiber-routes", async (req, res) => {
     try {
       const routes = await storage.getFiberRoutes();
       res.json(routes);
@@ -731,7 +736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/fiber-routes", requireAuth, async (req, res) => {
+  app.post("/api/fiber-routes", async (req, res) => {
     try {
       const data = insertFiberRouteSchema.parse(req.body);
       const route = await storage.createFiberRoute(data);
@@ -741,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/fiber-routes/job/:jobId", requireAuth, async (req, res) => {
+  app.get("/api/fiber-routes/job/:jobId", async (req, res) => {
     try {
       const routes = await storage.getFiberRoutesByJob(parseInt(req.params.jobId));
       res.json(routes);
