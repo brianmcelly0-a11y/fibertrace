@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Layers, Navigation, Play, Pause, Save, AlertCircle, Activity, Zap } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, gpsRoutesApi, authApi } from "@/lib/api";
@@ -86,6 +87,22 @@ export default function Map() {
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [permissionState, setPermissionState] = useState<GPSPermissionState>('prompt');
   const watchIdRef = useRef<number | null>(null);
+  
+  // Layer visibility state
+  const [layerVisibility, setLayerVisibility] = useState({
+    olts: true,
+    splitters: true,
+    fats: true,
+    atbs: true,
+    closures: true,
+    gpsPath: true,
+    jobRoutes: true,
+    currentLocation: true,
+  });
+
+  const toggleLayer = (layer: keyof typeof layerVisibility) => {
+    setLayerVisibility(prev => ({ ...prev, [layer]: !prev[layer] }));
+  };
 
   // Check authentication first
   const { data: user, isLoading: authLoading, error: authError } = useQuery({
@@ -429,7 +446,7 @@ export default function Map() {
         />
         
         {/* GPS Path */}
-        {gpsPath.length > 1 && (
+        {layerVisibility.gpsPath && gpsPath.length > 1 && (
           <Polyline 
             positions={gpsPath} 
             color="#10b981" 
@@ -440,7 +457,7 @@ export default function Map() {
         )}
 
         {/* Job Routes */}
-        {jobs.length > 0 && (
+        {layerVisibility.jobRoutes && jobs.length > 0 && (
           <Polyline 
             positions={jobs
               .filter(job => job.latitude && job.longitude)
@@ -453,7 +470,7 @@ export default function Map() {
         )}
 
         {/* Current Location Marker */}
-        {currentLocation && (
+        {layerVisibility.currentLocation && currentLocation && (
           <Marker 
             position={currentLocation} 
             icon={L.divIcon({
@@ -474,7 +491,7 @@ export default function Map() {
         )}
 
         {/* OLT Markers */}
-        {olts.map((olt) => {
+        {layerVisibility.olts && olts.map((olt) => {
           if (!olt.latitude || !olt.longitude) return null;
           return (
             <Marker 
@@ -501,7 +518,7 @@ export default function Map() {
         })}
 
         {/* Splitter Markers */}
-        {splitters.map((splitter) => {
+        {layerVisibility.splitters && splitters.map((splitter) => {
           if (!splitter.latitude || !splitter.longitude) return null;
           const powerInfo = getPowerStatus(splitter.inputPower);
           
@@ -533,7 +550,7 @@ export default function Map() {
         })}
 
         {/* FAT Markers */}
-        {fats.map((fat) => {
+        {layerVisibility.fats && fats.map((fat) => {
           if (!fat.latitude || !fat.longitude) return null;
           const powerInfo = getPowerStatus(fat.inputPower);
           
@@ -566,7 +583,7 @@ export default function Map() {
         })}
 
         {/* ATB Markers */}
-        {atbs.map((atb) => {
+        {layerVisibility.atbs && atbs.map((atb) => {
           if (!atb.latitude || !atb.longitude) return null;
           const powerInfo = getPowerStatus(atb.inputPower);
           
@@ -599,7 +616,7 @@ export default function Map() {
         })}
 
         {/* Closure Markers */}
-        {closures.map((closure) => {
+        {layerVisibility.closures && closures.map((closure) => {
           if (!closure.latitude || !closure.longitude) return null;
           const powerInfo = getPowerStatus(closure.inputPower);
           
@@ -719,44 +736,107 @@ export default function Map() {
         </Card>
 
         <Card className="bg-card/90 backdrop-blur-md border-border/50 w-72 p-3">
-          <h3 className="font-bold text-sm mb-2 flex items-center gap-1">
-            <Activity className="h-4 w-4 text-primary" />
-            Network Nodes
-          </h3>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 bg-green-500 rounded-full border border-white"></div>
-              <span data-testid="text-olt-count">OLT ({olts.length})</span>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold text-sm flex items-center gap-1">
+              <Layers className="h-4 w-4 text-primary" />
+              Map Layers
+            </h3>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-green-500 rounded-full border border-white"></div>
+                <span>OLTs ({olts.length})</span>
+              </div>
+              <Switch
+                checked={layerVisibility.olts}
+                onCheckedChange={() => toggleLayer('olts')}
+                data-testid="toggle-olts"
+              />
             </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 bg-blue-500 rounded-full border border-white"></div>
-              <span data-testid="text-splitter-count">Splitters ({splitters.length})</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-blue-500 rounded-full border border-white"></div>
+                <span>Splitters ({splitters.length})</span>
+              </div>
+              <Switch
+                checked={layerVisibility.splitters}
+                onCheckedChange={() => toggleLayer('splitters')}
+                data-testid="toggle-splitters"
+              />
             </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 bg-amber-500 rounded-full border border-white"></div>
-              <span data-testid="text-fat-count">FAT ({fats.length})</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-amber-500 rounded-full border border-white"></div>
+                <span>FATs ({fats.length})</span>
+              </div>
+              <Switch
+                checked={layerVisibility.fats}
+                onCheckedChange={() => toggleLayer('fats')}
+                data-testid="toggle-fats"
+              />
             </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 bg-purple-500 rounded-full border border-white"></div>
-              <span data-testid="text-atb-count">ATB ({atbs.length})</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-purple-500 rounded-full border border-white"></div>
+                <span>ATBs ({atbs.length})</span>
+              </div>
+              <Switch
+                checked={layerVisibility.atbs}
+                onCheckedChange={() => toggleLayer('atbs')}
+                data-testid="toggle-atbs"
+              />
             </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 bg-pink-500 rounded-full border border-white"></div>
-              <span data-testid="text-closure-count">Closures ({closures.length})</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-pink-500 rounded-full border border-white"></div>
+                <span>Closures ({closures.length})</span>
+              </div>
+              <Switch
+                checked={layerVisibility.closures}
+                onCheckedChange={() => toggleLayer('closures')}
+                data-testid="toggle-closures"
+              />
+            </div>
+            <div className="border-t border-border/50 my-2"></div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-cyan-500 rounded-md border border-white"></div>
+                <span>Job Routes</span>
+              </div>
+              <Switch
+                checked={layerVisibility.jobRoutes}
+                onCheckedChange={() => toggleLayer('jobRoutes')}
+                data-testid="toggle-job-routes"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 bg-green-400 rounded-md border border-white"></div>
+                <span>GPS Path</span>
+              </div>
+              <Switch
+                checked={layerVisibility.gpsPath}
+                onCheckedChange={() => toggleLayer('gpsPath')}
+                data-testid="toggle-gps-path"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Navigation className="h-3 w-3 text-green-500" />
+                <span>My Location</span>
+              </div>
+              <Switch
+                checked={layerVisibility.currentLocation}
+                onCheckedChange={() => toggleLayer('currentLocation')}
+                data-testid="toggle-current-location"
+              />
             </div>
           </div>
         </Card>
       </div>
 
       <div className="absolute bottom-8 right-4 z-[400] flex flex-col gap-2">
-        <Button 
-          size="icon" 
-          variant="secondary"
-          className="rounded-full"
-          data-testid="button-layers"
-        >
-          <Layers className="h-5 w-5" />
-        </Button>
         <Button 
           size="icon" 
           className="rounded-full bg-primary text-black"
