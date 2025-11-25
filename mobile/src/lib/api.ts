@@ -64,6 +64,16 @@ export const api = {
     return res.json();
   },
 
+  async updateJobStatus(id: number, status: string) {
+    const res = await fetch(`${API_BASE}/api/jobs/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('Failed to update job status');
+    return res.json();
+  },
+
   async deleteJob(id: number) {
     const res = await fetch(`${API_BASE}/api/jobs/${id}`, {
       method: 'DELETE',

@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { MapScreen } from './screens/MapScreen';
 import { JobsScreen } from './screens/JobsScreen';
 import { colors } from './theme/colors';
+import { initializeOfflineStorage } from './lib/offlineStorage';
+import { offlineSync } from './lib/offlineSync';
 
 const Tab = createBottomTabNavigator();
 const queryClient = new QueryClient({
@@ -12,13 +14,30 @@ const queryClient = new QueryClient({
     queries: {
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
     },
   },
 });
 
 export default function App() {
+  useEffect(() => {
+    // Initialize offline storage
+    initializeOfflineStorage().catch(error => {
+      console.error('Failed to initialize offline storage:', error);
+    });
+
+    // Start periodic sync every 5 minutes
+    const cleanup = offlineSync.startPeriodic(300000);
+
+    // Perform initial sync
+    offlineSync.sync().catch(error => {
+      console.error('Initial sync failed:', error);
+    });
+
+    return cleanup;
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <NavigationContainer>

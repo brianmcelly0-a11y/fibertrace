@@ -10,7 +10,7 @@ import {
   Modal,
 } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { offlineApi } from '../lib/offlineApiAdapter';
 import { colors } from '../theme/colors';
 import { updateJobStatus } from '../lib/jobManager';
 
@@ -25,11 +25,7 @@ export function JobDetailsScreen({ jobId, onClose }: JobDetailsScreenProps) {
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['/api/jobs', jobId],
-    queryFn: async () => {
-      const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`);
-      if (!res.ok) throw new Error('Failed to fetch job');
-      return res.json();
-    },
+    queryFn: () => offlineApi.getJob(jobId),
   });
 
   const statusMutation = useMutation({

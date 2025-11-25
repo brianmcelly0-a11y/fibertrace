@@ -9,7 +9,7 @@ import {
   Modal,
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { offlineApi } from '../lib/offlineApiAdapter';
 import { colors } from '../theme/colors';
 import { JobDetailsScreen } from './JobDetailsScreen';
 
@@ -19,7 +19,7 @@ export function JobsScreen() {
 
   const { data: jobs = [], isLoading, refetch } = useQuery({
     queryKey: ['/api/jobs'],
-    queryFn: () => api.getJobs(),
+    queryFn: () => offlineApi.getJobs(),
   });
 
   const statusColors: Record<string, string> = {
