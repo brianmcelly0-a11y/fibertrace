@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { jobsApi } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,12 +10,16 @@ import {
   Filter, 
   MapPin, 
   MoreVertical,
-  Navigation
+  Navigation,
+  ChevronRight
 } from "lucide-react";
 import { format } from "date-fns";
+import { JobDetailsDialog } from "@/components/JobDetailsDialog";
 
 export default function Jobs() {
-  const { data: jobs = [], isLoading } = useQuery({
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  
+  const { data: jobs = [], isLoading, refetch } = useQuery({
     queryKey: ['jobs'],
     queryFn: jobsApi.getAll,
   });
@@ -43,7 +48,11 @@ export default function Jobs() {
 
       <div className="grid gap-4">
         {jobs.map((job) => (
-          <Card key={job.id} className="bg-card/40 border-border/50 hover:border-primary/30 transition-all group">
+          <Card 
+            key={job.id} 
+            className="bg-card/40 border-border/50 hover:border-primary/30 transition-all group cursor-pointer"
+            onClick={() => setSelectedJob(job)}
+          >
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Left: Status Indicator & Date */}
@@ -68,28 +77,28 @@ export default function Jobs() {
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors">
-                        {job.clientName}
+                        {job.type}
                       </h3>
                       <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                         <MapPin className="h-3 w-3" />
                         {job.address}
                       </p>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                   
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Badge variant="secondary" className="bg-white/5 hover:bg-white/10 text-muted-foreground">
-                      {job.type}
-                    </Badge>
-                    <Badge variant="secondary" className="bg-white/5 hover:bg-white/10 text-muted-foreground">
                       ID: #{job.id}
                     </Badge>
+                    {job.cableUsed && (
+                      <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                        Cable: {job.cableUsed}m
+                      </Badge>
+                    )}
                     {job.notes && (
                       <span className="text-xs text-muted-foreground flex items-center mt-1 ml-2">
-                        "{job.notes}"
+                        "{job.notes.substring(0, 40)}{job.notes.length > 40 ? '...' : ''}"
                       </span>
                     )}
                   </div>
@@ -97,8 +106,14 @@ export default function Jobs() {
 
                 {/* Right: Actions */}
                 <div className="flex md:flex-col gap-2 md:w-32 md:pl-6 md:border-l md:border-border/30 justify-end">
-                  <Button className="w-full bg-primary text-black hover:bg-primary/90">
-                    Resume
+                  <Button 
+                    className="w-full bg-primary text-black hover:bg-primary/90"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedJob(job);
+                    }}
+                  >
+                    Details
                   </Button>
                   <Button variant="outline" className="w-full border-white/10 hover:bg-white/5">
                     <Navigation className="mr-2 h-3 w-3" />
@@ -118,6 +133,16 @@ export default function Jobs() {
           </Card>
         )}
       </div>
+
+      {/* Job Details Dialog */}
+      <JobDetailsDialog
+        open={!!selectedJob}
+        onOpenChange={(open) => {
+          if (!open) setSelectedJob(null);
+          else refetch();
+        }}
+        job={selectedJob}
+      />
     </div>
   );
 }

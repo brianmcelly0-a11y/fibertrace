@@ -22,6 +22,8 @@ import { exportToJSON, exportToCSV, importFromJSON, importFromCSV, filterNodesBy
 import { analyzePowerDistribution, calculatePowerMetrics } from "@/lib/powerAnalysis";
 import { calculateDistance, findOptimalRoute, getRouteStats } from "@/lib/routeOptimization";
 import { createJobFromNodes, formatJobStatus, calculateJobDistance } from "@/lib/jobUtils";
+import { calculateRouteDistance } from "@/lib/jobOperationalManager";
+import { JobFormDialog } from "@/components/JobFormDialog";
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -256,6 +258,7 @@ export default function Map() {
   // Phase 3: Job management state
   const [showJobCreation, setShowJobCreation] = useState(false);
   const [showJobsList, setShowJobsList] = useState(false);
+  const [routeDistance, setRouteDistance] = useState(0);
 
   // Toggle node selection for bulk ops
   const toggleNodeSelection = (nodeId: string) => {
@@ -266,6 +269,22 @@ export default function Map() {
       newSelected.add(nodeId);
     }
     setSelectedNodeIds(newSelected);
+    
+    // Calculate distance between selected nodes if multiple selected
+    if (newSelected.size >= 2) {
+      const selectedNodesData = allNodes.filter(n => newSelected.has(n.nodeId));
+      const waypoints = selectedNodesData.map(n => [
+        parseFloat(n.latitude || '0'),
+        parseFloat(n.longitude || '0')
+      ]) as [number, number][];
+      
+      if (waypoints.length >= 2) {
+        const distance = calculateRouteDistance(waypoints);
+        setRouteDistance(distance);
+      }
+    } else {
+      setRouteDistance(0);
+    }
   };
 
   // Export handlers
@@ -1596,58 +1615,18 @@ export default function Map() {
         </DialogContent>
       </Dialog>
 
-      {/* Phase 3: Job Creation Dialog */}
-      <Dialog open={showJobCreation} onOpenChange={setShowJobCreation}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5" />
-              Create New Job
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              <p>Selected nodes: <Badge>{selectedNodeIds.size}</Badge></p>
-              <p>Route waypoints: <Badge>{gpsPath.length}</Badge></p>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium">Job Type</label>
-                <Input placeholder="e.g., Installation, Maintenance" className="mt-1" data-testid="input-job-type" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Address</label>
-                <Input placeholder="Job location address" className="mt-1" data-testid="input-job-address" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Scheduled Date</label>
-                <Input type="date" className="mt-1" data-testid="input-job-date" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Notes</label>
-                <Textarea placeholder="Job notes and details" className="mt-1" data-testid="input-job-notes" />
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end pt-4">
-              <Button variant="outline" onClick={() => setShowJobCreation(false)} data-testid="button-cancel-job">
-                Cancel
-              </Button>
-              <Button onClick={() => {
-                if (selectedNodeIds.size === 0 || gpsPath.length === 0) {
-                  toast({ title: "Error", description: "Select nodes and draw a route first" });
-                  return;
-                }
-                toast({ title: "Job Created", description: "New job saved to map" });
-                setShowJobCreation(false);
-                setSelectedNodeIds(new Set());
-              }} data-testid="button-create-job">
-                <Briefcase className="h-4 w-4 mr-2" />
-                Create Job
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Operational Job Form Dialog */}
+      <JobFormDialog
+        open={showJobCreation}
+        onOpenChange={setShowJobCreation}
+        selectedNodeIds={Array.from(selectedNodeIds).length > 0 ? Array.from(selectedNodeIds).map(id => parseInt(id.split('-')[1]) || 0).filter(n => n > 0) : []}
+        routeDistance={routeDistance}
+        onSuccess={() => {
+          setSelectedNodeIds(new Set());
+          setRouteDistance(0);
+          queryClient.invalidateQueries({ queryKey: ['jobs'] });
+        }}
+      />
 
       {/* Phase 3: Jobs List Dialog */}
       <Dialog open={showJobsList} onOpenChange={setShowJobsList}>

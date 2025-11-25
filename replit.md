@@ -31,6 +31,33 @@ The application features a dark-themed UI with neon-blue accents, creating a tec
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Implementation - Web & Mobile Parity with Operational Enhancements (November 25, 2025)
+
+### Web App Enhanced with Mobile Parity ✅
+
+**WEB ENHANCEMENTS ADDED:**
+- Job Operational Manager - Auto-calculations for cable, time, power impact
+- JobFormDialog - Advanced job creation with route preview
+- JobDetailsDialog - Full job management with inline editing
+- Enhanced Jobs page - Tap-to-view details with modal
+- Enhanced Map page - Multi-node selection with route distance
+
+**New Web Components:**
+- `client/src/lib/jobOperationalManager.ts` - Calculation engine
+- `client/src/components/JobFormDialog.tsx` - Job creation dialog
+- `client/src/components/JobDetailsDialog.tsx` - Job details management
+
+**Features:**
+- ✅ Multi-node route creation
+- ✅ Auto-calculated cable & time estimates
+- ✅ Job lifecycle management (Pending → In Progress → Completed)
+- ✅ Inline note editing
+- ✅ Power impact analysis
+- ✅ Same dark theme as mobile
+- ✅ Identical backend integration
+
+---
+
 ## Recent Implementation - Mobile App with Operational Enhancements (November 25, 2025)
 
 ### React Native Mobile App with Job Fine-Tuning ✅
