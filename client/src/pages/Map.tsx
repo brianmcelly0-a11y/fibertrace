@@ -535,14 +535,210 @@ export default function Map() {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] w-full relative rounded-xl overflow-hidden border border-primary/20 shadow-2xl">
-      <MapContainer 
-        center={center} 
-        zoom={14} 
-        scrollWheelZoom={true} 
-        style={{ height: '100%', width: '100%', background: '#0f172a' }}
-        className="z-0"
-      >
+    <div className="h-screen w-full flex gap-0">
+      {/* Sidebar with toggles */}
+      <div className="w-80 bg-card border-r border-border/50 shadow-lg flex flex-col overflow-hidden">
+        <div className="overflow-y-auto flex-1">
+          {/* GPS Tracking Section */}
+          <div className="p-3 border-b border-border/50">
+            <Card className="bg-card/90 backdrop-blur-md border-border/50 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-sm flex items-center gap-1">
+                  <Navigation className="h-4 w-4 text-primary" />
+                  GPS Tracking
+                </h3>
+                <div className="flex gap-1">
+                  {isTracking && gpsPath.length > 1 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={saveGPSRoute}
+                      disabled={saveGPSRouteMutation.isPending}
+                      data-testid="button-save-route"
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      Save
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant={isTracking ? "destructive" : "default"}
+                    onClick={isTracking ? stopTracking : startTracking}
+                    disabled={permissionState === 'denied' || permissionState === 'unavailable'}
+                    data-testid="button-gps-toggle"
+                  >
+                    {isTracking ? (
+                      <>
+                        <Pause className="h-3 w-3 mr-1" />
+                        Stop
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-3 w-3 mr-1" />
+                        Start
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              {permissionState === 'denied' && (
+                <div className="mb-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Location permission denied
+                  </p>
+                </div>
+              )}
+              {permissionState === 'unavailable' && (
+                <div className="mb-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    GPS not available
+                  </p>
+                </div>
+              )}
+              {currentLocation ? (
+                <div className="text-xs space-y-1">
+                  <p className="text-muted-foreground">
+                    <strong>Lat:</strong> {currentLocation[0].toFixed(6)}°
+                  </p>
+                  <p className="text-muted-foreground">
+                    <strong>Lon:</strong> {currentLocation[1].toFixed(6)}°
+                  </p>
+                  {accuracy && (
+                    <p className="text-muted-foreground">
+                      <strong>Accuracy:</strong> ±{accuracy.toFixed(0)}m
+                    </p>
+                  )}
+                  <p className="text-muted-foreground">
+                    <strong>Path Points:</strong> {gpsPath.length}
+                  </p>
+                  {gpsPath.length > 1 && (
+                    <p className="text-muted-foreground">
+                      <strong>Distance:</strong> {(calculateTotalDistance(gpsPath)).toFixed(0)}m
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Click Start to track location</p>
+              )}
+            </Card>
+          </div>
+
+          {/* Map Layers Section */}
+          <div className="p-3">
+            <Card className="bg-card/90 backdrop-blur-md border-border/50 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-sm flex items-center gap-1">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Map Layers
+                </h3>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-green-500 rounded-full border border-white"></div>
+                    <span>OLTs ({olts.length})</span>
+                  </div>
+                  <Switch
+                    checked={layerVisibility.olts}
+                    onCheckedChange={() => toggleLayer('olts')}
+                    data-testid="toggle-olts"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-blue-500 rounded-full border border-white"></div>
+                    <span>Splitters ({splitters.length})</span>
+                  </div>
+                  <Switch
+                    checked={layerVisibility.splitters}
+                    onCheckedChange={() => toggleLayer('splitters')}
+                    data-testid="toggle-splitters"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-amber-500 rounded-full border border-white"></div>
+                    <span>FATs ({fats.length})</span>
+                  </div>
+                  <Switch
+                    checked={layerVisibility.fats}
+                    onCheckedChange={() => toggleLayer('fats')}
+                    data-testid="toggle-fats"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-purple-500 rounded-full border border-white"></div>
+                    <span>ATBs ({atbs.length})</span>
+                  </div>
+                  <Switch
+                    checked={layerVisibility.atbs}
+                    onCheckedChange={() => toggleLayer('atbs')}
+                    data-testid="toggle-atbs"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-pink-500 rounded-full border border-white"></div>
+                    <span>Closures ({closures.length})</span>
+                  </div>
+                  <Switch
+                    checked={layerVisibility.closures}
+                    onCheckedChange={() => toggleLayer('closures')}
+                    data-testid="toggle-closures"
+                  />
+                </div>
+                <div className="border-t border-border/50 my-2"></div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-cyan-500 rounded-md border border-white"></div>
+                    <span>Job Routes</span>
+                  </div>
+                  <Switch
+                    checked={layerVisibility.jobRoutes}
+                    onCheckedChange={() => toggleLayer('jobRoutes')}
+                    data-testid="toggle-job-routes"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-green-400 rounded-md border border-white"></div>
+                    <span>GPS Path</span>
+                  </div>
+                  <Switch
+                    checked={layerVisibility.gpsPath}
+                    onCheckedChange={() => toggleLayer('gpsPath')}
+                    data-testid="toggle-gps-path"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-green-500 rounded-full border border-white animate-pulse"></div>
+                    <span>Current Location</span>
+                  </div>
+                  <Switch
+                    checked={layerVisibility.currentLocation}
+                    onCheckedChange={() => toggleLayer('currentLocation')}
+                    data-testid="toggle-current-location"
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Map Container */}
+      <div className="flex-1 relative overflow-hidden">
+        <MapContainer 
+          center={center} 
+          zoom={14} 
+          scrollWheelZoom={true} 
+          style={{ height: '100%', width: '100%', background: '#0f172a' }}
+          className="z-0"
+        >
         <MapController center={center} />
         <MapEventHandler onLongPress={handleLongPress} />
         <TileLayer
@@ -707,193 +903,8 @@ export default function Map() {
         })}
       </MapContainer>
 
-      {/* Map Overlays */}
-      <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
-        <Card className="bg-card/90 backdrop-blur-md border-border/50 w-72 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-sm flex items-center gap-1">
-              <Navigation className="h-4 w-4 text-primary" />
-              GPS Tracking
-            </h3>
-            <div className="flex gap-1">
-              {isTracking && gpsPath.length > 1 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={saveGPSRoute}
-                  disabled={saveGPSRouteMutation.isPending}
-                  data-testid="button-save-route"
-                >
-                  <Save className="h-3 w-3 mr-1" />
-                  Save
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant={isTracking ? "destructive" : "default"}
-                onClick={isTracking ? stopTracking : startTracking}
-                disabled={permissionState === 'denied' || permissionState === 'unavailable'}
-                data-testid="button-gps-toggle"
-              >
-                {isTracking ? (
-                  <>
-                    <Pause className="h-3 w-3 mr-1" />
-                    Stop
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-3 w-3 mr-1" />
-                    Start
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-          {permissionState === 'denied' && (
-            <div className="mb-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                Location permission denied
-              </p>
-            </div>
-          )}
-          {permissionState === 'unavailable' && (
-            <div className="mb-2 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                GPS not available
-              </p>
-            </div>
-          )}
-          {currentLocation ? (
-            <div className="text-xs space-y-1">
-              <p className="text-muted-foreground">
-                <strong>Lat:</strong> {currentLocation[0].toFixed(6)}°
-              </p>
-              <p className="text-muted-foreground">
-                <strong>Lon:</strong> {currentLocation[1].toFixed(6)}°
-              </p>
-              {accuracy && (
-                <p className="text-muted-foreground">
-                  <strong>Accuracy:</strong> ±{accuracy.toFixed(0)}m
-                </p>
-              )}
-              <p className="text-muted-foreground">
-                <strong>Path Points:</strong> {gpsPath.length}
-              </p>
-              {gpsPath.length > 1 && (
-                <p className="text-muted-foreground">
-                  <strong>Distance:</strong> {(calculateTotalDistance(gpsPath)).toFixed(0)}m
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">Click Start to track location</p>
-          )}
-        </Card>
-
-        <Card className="bg-card/90 backdrop-blur-md border-border/50 w-72 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-sm flex items-center gap-1">
-              <Layers className="h-4 w-4 text-primary" />
-              Map Layers
-            </h3>
-          </div>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-green-500 rounded-full border border-white"></div>
-                <span>OLTs ({olts.length})</span>
-              </div>
-              <Switch
-                checked={layerVisibility.olts}
-                onCheckedChange={() => toggleLayer('olts')}
-                data-testid="toggle-olts"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-blue-500 rounded-full border border-white"></div>
-                <span>Splitters ({splitters.length})</span>
-              </div>
-              <Switch
-                checked={layerVisibility.splitters}
-                onCheckedChange={() => toggleLayer('splitters')}
-                data-testid="toggle-splitters"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-amber-500 rounded-full border border-white"></div>
-                <span>FATs ({fats.length})</span>
-              </div>
-              <Switch
-                checked={layerVisibility.fats}
-                onCheckedChange={() => toggleLayer('fats')}
-                data-testid="toggle-fats"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-purple-500 rounded-full border border-white"></div>
-                <span>ATBs ({atbs.length})</span>
-              </div>
-              <Switch
-                checked={layerVisibility.atbs}
-                onCheckedChange={() => toggleLayer('atbs')}
-                data-testid="toggle-atbs"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-pink-500 rounded-full border border-white"></div>
-                <span>Closures ({closures.length})</span>
-              </div>
-              <Switch
-                checked={layerVisibility.closures}
-                onCheckedChange={() => toggleLayer('closures')}
-                data-testid="toggle-closures"
-              />
-            </div>
-            <div className="border-t border-border/50 my-2"></div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-cyan-500 rounded-md border border-white"></div>
-                <span>Job Routes</span>
-              </div>
-              <Switch
-                checked={layerVisibility.jobRoutes}
-                onCheckedChange={() => toggleLayer('jobRoutes')}
-                data-testid="toggle-job-routes"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 bg-green-400 rounded-md border border-white"></div>
-                <span>GPS Path</span>
-              </div>
-              <Switch
-                checked={layerVisibility.gpsPath}
-                onCheckedChange={() => toggleLayer('gpsPath')}
-                data-testid="toggle-gps-path"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Navigation className="h-3 w-3 text-green-500" />
-                <span>My Location</span>
-              </div>
-              <Switch
-                checked={layerVisibility.currentLocation}
-                onCheckedChange={() => toggleLayer('currentLocation')}
-                data-testid="toggle-current-location"
-              />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="absolute bottom-8 right-4 z-[400] flex flex-col gap-2">
+        {/* Add Node Button */}
+        <div className="absolute bottom-8 right-4 z-[400] flex flex-col gap-2">
         <Button 
           size="icon" 
           className="rounded-full bg-primary text-black"
@@ -1011,6 +1022,7 @@ export default function Map() {
           </Card>
         </div>
       )}
+    </div>
 
       {/* Node Creation Dialog */}
       <Dialog open={nodeCreationOpen} onOpenChange={setNodeCreationOpen}>
