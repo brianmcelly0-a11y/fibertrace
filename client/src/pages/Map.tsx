@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Layers, Navigation, Play, Pause, Save, AlertCircle, Activity, Zap, X, Edit, Link2, FileText } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, gpsRoutesApi, authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +32,17 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 type GPSPermissionState = 'prompt' | 'granted' | 'denied' | 'unavailable';
 
+// Node creation form schema
+const nodeCreationSchema = z.object({
+  name: z.string().min(1, "Node name is required"),
+  type: z.enum(['OLT', 'Splitter', 'FAT', 'ATB', 'Dome', 'Underground', 'Aerial']),
+  location: z.string().min(1, "Location is required"),
+  inputPower: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type NodeCreationFormData = z.infer<typeof nodeCreationSchema>;
+
 // Component to handle map centering
 function MapController({ center }: { center: [number, number] }) {
   const map = useMap();
@@ -35,6 +53,40 @@ function MapController({ center }: { center: [number, number] }) {
     }
   }, [center, map]);
   
+  return null;
+}
+
+// Component to handle map events for long-press node creation
+function MapEventHandler({ onLongPress }: { onLongPress: (lat: number, lng: number) => void }) {
+  const pressStartRef = useRef<number>(0);
+  const pressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useMapEvents({
+    contextmenu: (e) => {
+      e.originalEvent.preventDefault();
+      onLongPress(e.latlng.lat, e.latlng.lng);
+    },
+    mousedown: (e) => {
+      pressStartRef.current = Date.now();
+      pressTimeoutRef.current = setTimeout(() => {
+        if (Date.now() - pressStartRef.current >= 500) {
+          onLongPress(e.latlng.lat, e.latlng.lng);
+        }
+      }, 500);
+    },
+    mouseup: () => {
+      if (pressTimeoutRef.current) {
+        clearTimeout(pressTimeoutRef.current);
+      }
+    },
+    mousemove: () => {
+      if (pressTimeoutRef.current && Date.now() - pressStartRef.current >= 100) {
+        clearTimeout(pressTimeoutRef.current);
+        pressTimeoutRef.current = null;
+      }
+    },
+  });
+
   return null;
 }
 
@@ -109,6 +161,39 @@ export default function Map() {
     type: 'OLT' | 'Splitter' | 'FAT' | 'ATB' | 'Closure';
     data: any;
   } | null>(null);
+
+  // Node creation dialog state
+  const [nodeCreationOpen, setNodeCreationOpen] = useState(false);
+  const [nodeCreationLat, setNodeCreationLat] = useState<number | null>(null);
+  const [nodeCreationLng, setNodeCreationLng] = useState<number | null>(null);
+
+  // Node creation form
+  const form = useForm<NodeCreationFormData>({
+    resolver: zodResolver(nodeCreationSchema),
+    defaultValues: {
+      name: '',
+      type: 'Splitter',
+      location: '',
+      inputPower: '',
+      notes: '',
+    },
+  });
+
+  const handleLongPress = (lat: number, lng: number) => {
+    setNodeCreationLat(lat);
+    setNodeCreationLng(lng);
+    setNodeCreationOpen(true);
+  };
+
+  const onNodeCreationSubmit = (data: NodeCreationFormData) => {
+    console.log('Node creation submitted:', { ...data, lat: nodeCreationLat, lng: nodeCreationLng });
+    toast({
+      title: "Node Created",
+      description: `Created ${data.type} node: ${data.name}`,
+    });
+    setNodeCreationOpen(false);
+    form.reset();
+  };
 
   // Check authentication first
   const { data: user, isLoading: authLoading, error: authError } = useQuery({
@@ -446,6 +531,7 @@ export default function Map() {
         className="z-0"
       >
         <MapController center={center} />
+        <MapEventHandler onLongPress={handleLongPress} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -866,6 +952,110 @@ export default function Map() {
           </Card>
         </div>
       )}
+
+      {/* Node Creation Dialog */}
+      <Dialog open={nodeCreationOpen} onOpenChange={setNodeCreationOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Node</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onNodeCreationSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Node Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., OLT-Main-01" {...field} data-testid="input-node-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Node Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-node-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="OLT">OLT</SelectItem>
+                        <SelectItem value="Splitter">Splitter</SelectItem>
+                        <SelectItem value="FAT">FAT</SelectItem>
+                        <SelectItem value="ATB">ATB</SelectItem>
+                        <SelectItem value="Dome">Dome Closure</SelectItem>
+                        <SelectItem value="Underground">Underground Closure</SelectItem>
+                        <SelectItem value="Aerial">Aerial Closure</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location / Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Downtown Central Office" {...field} data-testid="input-node-location" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="inputPower"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Input Power (dBm)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.1" placeholder="e.g., -5.2" {...field} data-testid="input-node-power" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Additional notes about this node..." {...field} data-testid="input-node-notes" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex gap-2 justify-end pt-4">
+                <Button type="button" variant="outline" onClick={() => setNodeCreationOpen(false)} data-testid="button-cancel-node">
+                  Cancel
+                </Button>
+                <Button type="submit" data-testid="button-create-node">
+                  Create Node
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
