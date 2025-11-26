@@ -15,6 +15,9 @@ import ReportsScreen from './screens/ReportsScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import BluetoothScreen from './screens/BluetoothScreen';
 import PerformanceScreen from './screens/PerformanceScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import UserProfileScreen from './screens/UserProfileScreen';
+import SyncStatusScreen from './screens/SyncStatusScreen';
 import { colors } from './theme/colors';
 import { initializeOfflineStorage } from './lib/offlineStorage';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -54,6 +57,9 @@ function AppContent() {
     Alerts: NotificationsScreen,
     BT: BluetoothScreen,
     Perf: PerformanceScreen,
+    Settings: SettingsScreen,
+    Profile: UserProfileScreen,
+    Sync: SyncStatusScreen,
   };
 
   const ActiveScreen = screens[activeTab];
