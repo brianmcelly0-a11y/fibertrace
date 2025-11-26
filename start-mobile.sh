@@ -1,4 +1,3 @@
 #!/bin/bash
 cd /home/runner/workspace
-export CI=true
-exec npx expo start --web --port 5000
+npx expo start --web --port 5000
