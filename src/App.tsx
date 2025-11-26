@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
+import LoginScreen from './screens/LoginScreen';
 import { MapScreen } from './screens/MapScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { NodeManagementScreen } from './screens/NodeManagementScreen';
@@ -23,6 +24,7 @@ import UserProfileScreen from './screens/UserProfileScreen';
 import SyncStatusScreen from './screens/SyncStatusScreen';
 import { colors } from './theme/colors';
 import { initializeOfflineStorage } from './lib/offlineStorage';
+import * as AuthStorage from './lib/authStorage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 const queryClient = new QueryClient({
@@ -41,11 +43,22 @@ function AppContent() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [syncStatus, setSyncStatus] = React.useState<{ isOnline: boolean; unsynced: number }>({ isOnline: true, unsynced: 0 });
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
     initializeOfflineStorage().catch(error => {
       console.error('Failed to initialize offline storage:', error);
     });
+
+    // Check if user is already logged in
+    const checkAuth = async () => {
+      const loggedIn = await AuthStorage.isLoggedIn();
+      setIsLoggedIn(loggedIn);
+      setLoading(false);
+    };
+
+    checkAuth();
 
     // Check sync status periodically
     const checkSync = async () => {
@@ -62,6 +75,28 @@ function AppContent() {
     const interval = setInterval(checkSync, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleLoginSuccess = async (user: AuthStorage.User) => {
+    await AuthStorage.saveUser(user);
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = async () => {
+    await AuthStorage.clearUser();
+    setIsLoggedIn(false);
+    setActiveTab('Dashboard');
+  };
+
+  // Show login screen if not logged in
+  if (!isLoggedIn && !loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <QueryClientProvider client={queryClient}>
+          <LoginScreen onLoginSuccess={handleLoginSuccess} />
+        </QueryClientProvider>
+      </View>
+    );
+  }
 
   const screens: Record<string, React.ComponentType<any>> = {
     Dashboard: DashboardScreen,
@@ -134,18 +169,25 @@ function AppContent() {
             {activeTab}
           </Text>
 
-          {/* Sync Status Indicator */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
-            <View style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: syncStatus.isOnline ? colors.chart.green : colors.chart.amber,
-              marginRight: 4,
-            }} />
-            <Text style={{ fontSize: 11, color: colors.mutedForeground }}>
-              {syncStatus.unsynced > 0 ? `${syncStatus.unsynced}⬆` : '✓'}
-            </Text>
+          {/* Sync Status & Logout */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: syncStatus.isOnline ? colors.chart.green : colors.chart.amber,
+                marginRight: 4,
+              }} />
+              <Text style={{ fontSize: 11, color: colors.mutedForeground }}>
+                {syncStatus.unsynced > 0 ? `${syncStatus.unsynced}⬆` : '✓'}
+              </Text>
+            </View>
+
+            {/* Logout Button */}
+            <TouchableOpacity onPress={handleLogout} style={{ padding: 4 }}>
+              <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>↪</Text>
+            </TouchableOpacity>
           </View>
 
           {/* App Title/Logo */}
