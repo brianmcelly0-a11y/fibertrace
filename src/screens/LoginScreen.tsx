@@ -9,8 +9,8 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwitchToRecovery }: LoginScreenProps) {
-  const [email, setEmail] = useState('tech@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -44,13 +44,8 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
             throw new Error('Invalid credentials');
           }
         } catch (apiError) {
-          // Fallback to local mode
-          const mockUser = {
-            email,
-            role: 'Technician' as const,
-            technicianId: `tech-${Date.now()}`,
-          };
-          onLoginSuccess?.(mockUser);
+          Alert.alert('Error', 'Server connection failed. Please ensure backend is running on localhost:5001');
+          console.error('Login API error:', apiError);
         }
       } else {
         Alert.alert('Invalid Credentials', 'Use valid email and password with 6+ characters');
@@ -123,7 +118,7 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
 
           <View style={styles.linkContainer}>
             <TouchableOpacity onPress={onSwitchToRegister}>
-              <Text style={styles.linkText}>Don't have account? <Text style={styles.linkHighlight}>Register</Text></Text>
+              <Text style={styles.linkText}><Text style={styles.linkHighlight}>Create New Account</Text></Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onSwitchToRecovery} style={{ marginTop: 8 }}>
               <Text style={styles.linkText}><Text style={styles.linkHighlight}>Forgot Password?</Text></Text>
