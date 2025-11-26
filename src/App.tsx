@@ -5,6 +5,9 @@ import { MapScreen } from './screens/MapScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { NodeManagementScreen } from './screens/NodeManagementScreen';
 import { RouteManagementScreen } from './screens/RouteManagementScreen';
+import { ClosureScreen } from './screens/ClosureScreen';
+import { CustomerScreen } from './screens/CustomerScreen';
+import { SpliceScreen } from './screens/SpliceScreen';
 import JobListScreen from './screens/JobListScreen';
 import InventoryScreen from './screens/InventoryScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
@@ -48,6 +51,9 @@ function AppContent() {
     Map: MapScreen,
     Nodes: NodeManagementScreen,
     Routes: RouteManagementScreen,
+    Closures: ClosureScreen,
+    Customers: CustomerScreen,
+    Splices: SpliceScreen,
     Jobs: JobListScreen,
     Inventory: InventoryScreen,
     Schedule: ScheduleScreen,
