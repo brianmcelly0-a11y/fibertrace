@@ -76,7 +76,7 @@ function AppContent() {
       <QueryClientProvider client={queryClient}>
         {/* Top Navigation Bar */}
         <View style={{
-          height: 60,
+          height: 64,
           backgroundColor: colors.card,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
@@ -84,13 +84,18 @@ function AppContent() {
           alignItems: 'center',
           paddingHorizontal: 16,
           justifyContent: 'space-between',
+          paddingTop: 8,
+          paddingBottom: 8,
         }}>
           {/* Hamburger Menu Button */}
           <TouchableOpacity
             onPress={() => setMenuOpen(!menuOpen)}
             style={{
-              padding: 8,
+              padding: 12,
+              marginLeft: -12,
+              borderRadius: 8,
             }}
+            activeOpacity={0.6}
           >
             <Text style={{ fontSize: 24, color: colors.foreground }}>☰</Text>
           </TouchableOpacity>
@@ -108,7 +113,7 @@ function AppContent() {
 
           {/* App Title/Logo */}
           <Text style={{
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: '600',
             color: colors.primary,
           }}>
@@ -123,53 +128,80 @@ function AppContent() {
             onPress={() => setMenuOpen(false)}
             style={{
               position: 'absolute',
-              top: 60,
+              top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 999,
+              backgroundColor: 'rgba(0, 0, 0, 0.4)',
+              zIndex: 998,
             }}
           />
         )}
 
-        {/* Slide-out Navigation Menu */}
+        {/* Slide-out Navigation Drawer */}
         {menuOpen && (
           <View style={{
             position: 'absolute',
-            top: 60,
+            top: 0,
             left: 0,
             bottom: 0,
             width: 280,
             backgroundColor: colors.card,
-            borderRightWidth: 1,
+            borderRightWidth: 2,
             borderRightColor: colors.border,
-            zIndex: 1000,
+            zIndex: 999,
+            paddingTop: 16,
             shadowColor: '#000',
-            shadowOffset: { width: 2, height: 0 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 5,
+            shadowOffset: { width: 4, height: 0 },
+            shadowOpacity: 0.25,
+            shadowRadius: 12,
+            elevation: 8,
           }}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {tabs.map(tab => (
+            {/* Drawer Header */}
+            <View style={{
+              paddingHorizontal: 20,
+              paddingVertical: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+              marginBottom: 8,
+            }}>
+              <Text style={{
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: colors.primary,
+              }}>
+                FiberTrace
+              </Text>
+              <Text style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                marginTop: 4,
+              }}>
+                Fiber Network Management
+              </Text>
+            </View>
+
+            {/* Navigation Items */}
+            <ScrollView showsVerticalScrollIndicator={false} scrollEnabled={true}>
+              {tabs.map((tab, index) => (
                 <TouchableOpacity
                   key={tab}
                   onPress={() => handleTabChange(tab)}
+                  activeOpacity={0.6}
                   style={{
-                    paddingVertical: 16,
+                    paddingVertical: 14,
                     paddingHorizontal: 20,
-                    backgroundColor: activeTab === tab ? colors.primary : 'transparent',
+                    backgroundColor: activeTab === tab ? colors.primary + '20' : 'transparent',
                     borderLeftWidth: activeTab === tab ? 4 : 0,
                     borderLeftColor: colors.primary,
-                    flexDirection: 'row',
-                    alignItems: 'center',
+                    marginVertical: 2,
                   }}
                 >
                   <Text style={{
-                    fontSize: 16,
-                    color: activeTab === tab ? colors.background : colors.foreground,
-                    fontWeight: activeTab === tab ? 'bold' : 'normal',
+                    fontSize: 15,
+                    color: activeTab === tab ? colors.primary : colors.foreground,
+                    fontWeight: activeTab === tab ? '600' : '500',
+                    letterSpacing: 0.2,
                   }}>
                     {tab}
                   </Text>
@@ -179,8 +211,8 @@ function AppContent() {
           </View>
         )}
 
-        {/* Main Content Area */}
-        <View style={{ flex: 1 }}>
+        {/* Main Content Area - Takes Full Space When Menu Closed */}
+        <View style={{ flex: 1, overflow: 'hidden' }}>
           {ActiveScreen && <ActiveScreen />}
         </View>
       </QueryClientProvider>
