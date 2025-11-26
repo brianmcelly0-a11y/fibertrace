@@ -12,14 +12,14 @@
     "build": "eas build --platform all"
   },
   "dependencies": {
-    "expo": "~51.0.0",
-    "expo-location": "~17.0.0",
-    "expo-status-bar": "~1.12.1",
-    "expo-constants": "~15.4.0",
+    "expo": "^51.0.0",
+    "expo-location": "^17.0.0",
+    "expo-status-bar": "^1.12.1",
+    "expo-constants": "^15.4.0",
     "react": "18.3.1",
     "react-native": "0.74.1",
     "react-native-maps": "1.7.1",
-    "react-native-gesture-handler": "~2.14.0",
+    "react-native-gesture-handler": "^2.14.0",
     "@react-navigation/bottom-tabs": "^6.5.0",
     "@react-navigation/native": "^6.1.0",
     "@react-navigation/stack": "^6.3.0",
@@ -33,10 +33,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
-    "@types/react": "^18.2.0",
-    "@types/react-native": "^0.74.0",
-    "typescript": "5.6.3",
-    "expo-cli": "latest"
+    "typescript": "5.6.3"
   },
   "private": true
 }
