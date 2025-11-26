@@ -59,11 +59,11 @@ class EnhancedOfflineSync {
     const localNotes = new Map(local.inlineNotes.map(n => [n.id, n]));
     const remoteNotes = new Map(remote.inlineNotes.map(n => [n.id, n]));
     
-    for (const [id, note] of localNotes) {
+    Array.from(localNotes.entries()).forEach(([id, note]) => {
       if (!remoteNotes.has(id)) {
         merged.inlineNotes.push(note);
       }
-    }
+    });
 
     merged.unsyncedChanges = false;
     return merged;
@@ -109,7 +109,7 @@ class EnhancedOfflineSync {
     failed: number;
     errors: string[];
   }> {
-    const results = { synced: 0, failed: 0, errors: [] };
+    const results: { synced: number; failed: number; errors: string[] } = { synced: 0, failed: 0, errors: [] };
 
     for (const item of this.queue) {
       try {
@@ -125,9 +125,8 @@ class EnhancedOfflineSync {
         } else {
           // Max retries exceeded
           results.failed++;
-          results.errors.push(
-            `Failed to sync ${item.type} ${item.id} after 3 retries: ${String(error)}`
-          );
+          const errorMsg = `Failed to sync ${item.type} ${item.id} after 3 retries: ${String(error)}`;
+          results.errors.push(errorMsg);
           this.queue = this.queue.filter(i => i.id !== item.id);
         }
       }

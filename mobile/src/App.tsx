@@ -1,112 +1,76 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { MapScreen } from './screens/MapScreen';
-import { JobsScreen } from './screens/JobsScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { NodeManagementScreen } from './screens/NodeManagementScreen';
 import { RouteManagementScreen } from './screens/RouteManagementScreen';
+import JobListScreen from './screens/JobListScreen';
 import { colors } from './theme/colors';
 import { initializeOfflineStorage } from './lib/offlineStorage';
-import { offlineSync } from './lib/offlineSync';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-const Tab = createBottomTabNavigator();
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
       retry: 1,
     },
   },
 });
 
-export default function App() {
+function AppContent() {
+  const [activeTab, setActiveTab] = React.useState('Dashboard');
+
   useEffect(() => {
-    // Initialize offline storage
     initializeOfflineStorage().catch(error => {
       console.error('Failed to initialize offline storage:', error);
     });
-
-    // Start periodic sync every 5 minutes
-    const cleanup = offlineSync.startPeriodic(300000);
-
-    // Perform initial sync
-    offlineSync.sync().catch(error => {
-      console.error('Initial sync failed:', error);
-    });
-
-    return cleanup;
   }, []);
 
+  const screens: Record<string, React.ComponentType<any>> = {
+    Dashboard: DashboardScreen,
+    Map: MapScreen,
+    Nodes: NodeManagementScreen,
+    Routes: RouteManagementScreen,
+    Jobs: JobListScreen,
+  };
+
+  const ActiveScreen = screens[activeTab];
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <Tab.Navigator
-          screenOptions={{
-            headerShown: true,
-            tabBarStyle: {
-              backgroundColor: colors.sidebar,
-              borderTopColor: colors.border,
-              borderTopWidth: 1,
-            },
-            tabBarActiveTintColor: colors.primary,
-            tabBarInactiveTintColor: colors.mutedForeground,
-            headerStyle: {
-              backgroundColor: colors.card,
-              borderBottomColor: colors.border,
-              borderBottomWidth: 1,
-            },
-            headerTintColor: colors.foreground,
-            headerTitleStyle: {
-              fontWeight: '600',
-            },
-          }}
-        >
-          <Tab.Screen
-            name="Dashboard"
-            component={DashboardScreen}
-            options={{
-              title: 'Dashboard',
-              tabBarLabel: 'Dashboard',
-            }}
-          />
-          <Tab.Screen
-            name="Map"
-            component={MapScreen}
-            options={{
-              title: 'FiberTrace Map',
-              tabBarLabel: 'Map',
-            }}
-          />
-          <Tab.Screen
-            name="Nodes"
-            component={NodeManagementScreen}
-            options={{
-              title: 'Node Management',
-              tabBarLabel: 'Nodes',
-            }}
-          />
-          <Tab.Screen
-            name="Routes"
-            component={RouteManagementScreen}
-            options={{
-              title: 'Route Management',
-              tabBarLabel: 'Routes',
-            }}
-          />
-          <Tab.Screen
-            name="Jobs"
-            component={JobsScreen}
-            options={{
-              title: 'Job Management',
-              tabBarLabel: 'Jobs',
-            }}
-          />
-        </Tab.Navigator>
-      </NavigationContainer>
-    </QueryClientProvider>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <QueryClientProvider client={queryClient}>
+        {ActiveScreen && <ActiveScreen />}
+        <View style={{ flexDirection: 'row', backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border }}>
+          {Object.keys(screens).map(tab => (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              style={{
+                flex: 1,
+                paddingVertical: 8,
+                alignItems: 'center',
+                backgroundColor: activeTab === tab ? colors.primary : 'transparent',
+              }}
+            >
+              <Text style={{ fontSize: 12, color: activeTab === tab ? colors.background : colors.mutedForeground, fontWeight: '600' }}>
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </QueryClientProvider>
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
   );
 }
