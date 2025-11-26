@@ -7,9 +7,8 @@ import {
   ScrollView,
   Alert,
   Dimensions,
+  Platform,
 } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import * as Location from 'expo-location';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { colors } from '../theme/colors';
@@ -19,6 +18,16 @@ import { JobFormModal } from './JobFormModal';
 const { width, height } = Dimensions.get('window');
 
 export function MapScreen() {
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, padding: 20 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.foreground, marginBottom: 10 }}>Map View</Text>
+        <Text style={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+          Map features require native mobile capabilities. Please use the mobile app to access map functionality.
+        </Text>
+      </View>
+    );
+  }
   const [region, setRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,

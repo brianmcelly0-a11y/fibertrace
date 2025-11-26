@@ -26,7 +26,7 @@
       "package": "com.fibertrace.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.svg"
     }
   }
 }
