@@ -8,36 +8,41 @@ import {
   Alert,
   Dimensions,
   Platform,
+  Modal,
+  TextInput,
+  FlatList,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { colors } from '../theme/colors';
-import { calculateDistance } from '../lib/utils';
-import { JobFormModal } from './JobFormModal';
+import * as MapModule from '../lib/mapModule';
+import { calculateHaversineDistance } from '../lib/utils';
 
-// Map components - Web fallback only
-const MapView = ({ style, region, onRegionChange, children, provider }: any) => (
+// Stub components for web
+const MapView = ({ style }: any) => (
   <View style={[style, { backgroundColor: colors.background }]} />
 );
-const Marker = ({ coordinate, pinColor, title, description, onPress }: any) => null;
-const Polyline = ({ coordinates, strokeColor, strokeWidth }: any) => null;
+const Marker = () => null;
+const Polyline = () => null;
 const PROVIDER_GOOGLE = null;
-
-// Location mock for web
-const Location = {
-  requestForegroundPermissionsAsync: async () => ({ status: 'granted' }),
-  getCurrentPositionAsync: async () => ({
-    coords: { latitude: 37.78825, longitude: -122.4324 },
-  }),
-  Accuracy: { BestForNavigation: 6 },
-  watchPositionAsync: async (options: any, callback: (location: any) => void) => ({ 
-    remove: () => {} 
-  }),
-};
 
 const { width, height } = Dimensions.get('window');
 
+interface Node {
+  id?: string;
+  latitude: number;
+  longitude: number;
+  name: string;
+  type: string;
+  nodeId?: string;
+  inputPower?: number;
+  outputPower?: number;
+  category?: string;
+  description?: string;
+}
+
 export function MapScreen() {
+  // Web fallback
   if (Platform.OS === 'web') {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, padding: 20 }}>
@@ -48,233 +53,428 @@ export function MapScreen() {
       </View>
     );
   }
-  const [region, setRegion] = useState({
+
+  // ===== WORKFLOW 1: MAP LOADING =====
+  const [region, setRegion] = useState<MapModule.MapRegion>({
     latitude: 37.78825,
     longitude: -122.4324,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+  const [currentLocation, setCurrentLocation] = useState<MapModule.GeoPoint | null>(null);
 
-  const [currentLocation, setCurrentLocation] = useState<any>(null);
-  const [selectedNode, setSelectedNode] = useState<any>(null);
-  const [gpsPath, setGpsPath] = useState<[number, number][]>([]);
-  const [isTracking, setIsTracking] = useState(false);
-  const [selectedNodes, setSelectedNodes] = useState<Set<number>>(new Set());
-  const [showJobForm, setShowJobForm] = useState(false);
-
-  // Fetch nodes from backend
-  const { data: olts = [] } = useQuery({
-    queryKey: ['/api/olts'],
-    queryFn: () => api.getOlts(),
-  });
-
-  const { data: splitters = [] } = useQuery({
-    queryKey: ['/api/splitters'],
-    queryFn: () => api.getSplitters(),
-  });
-
-  const { data: fats = [] } = useQuery({
-    queryKey: ['/api/fats'],
-    queryFn: () => api.getFats(),
-  });
-
-  const { data: atbs = [] } = useQuery({
-    queryKey: ['/api/atbs'],
-    queryFn: () => api.getAtbs(),
-  });
-
-  const { data: closures = [] } = useQuery({
-    queryKey: ['/api/closures'],
-    queryFn: () => api.getClosures(),
-  });
-
-  // Request location permission
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const location = await Location.getCurrentPositionAsync({});
-        const coords = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        };
-        setCurrentLocation(location.coords);
-        setRegion(coords);
-      }
+      const initialRegion = await MapModule.loadMapInitialState();
+      setRegion(initialRegion);
+      setCurrentLocation({ latitude: initialRegion.latitude, longitude: initialRegion.longitude });
     })();
   }, []);
 
-  // Start GPS tracking
-  const startTracking = async () => {
+  // ===== WORKFLOW 2: MAP DATA OVERLAY =====
+  const [allNodes, setAllNodes] = useState<MapModule.MapNode[]>([]);
+  const [fiberLines, setFiberLines] = useState<MapModule.FiberLine[]>([]);
+  const [layerVisibility, setLayerVisibilityState] = useState<MapModule.MapLayerVisibility>({
+    olts: true,
+    splitters: true,
+    fats: true,
+    atbs: true,
+    closures: true,
+    fiberLines: true,
+    powerReadings: false,
+    jobs: true,
+    inventory: false,
+    issues: true,
+  });
+
+  useEffect(() => {
+    (async () => {
+      const { nodes, lines } = await MapModule.loadAllNetworkLayers();
+      setAllNodes(nodes);
+      setFiberLines(lines);
+      const visibility = await MapModule.getLayerVisibility();
+      setLayerVisibilityState(visibility);
+    })();
+  }, []);
+
+  // ===== WORKFLOW 3: MAP INTERACTION =====
+  const [selectedNode, setSelectedNode] = useState<MapModule.MapNode | null>(null);
+  const [showNodePanel, setShowNodePanel] = useState(false);
+
+  const handleMapPress = (location: MapModule.GeoPoint) => {
+    if (!currentLocation) return;
+    const node = MapModule.detectNodeAtLocation(allNodes, location, 0.05);
+    if (node) {
+      setSelectedNode(node);
+      setShowNodePanel(true);
+    }
+  };
+
+  // ===== WORKFLOW 4: INFRASTRUCTURE MANAGEMENT =====
+  const [showAddNodeModal, setShowAddNodeModal] = useState(false);
+  const [newNodeName, setNewNodeName] = useState('');
+  const [newNodeType, setNewNodeType] = useState<'OLT' | 'Splitter' | 'FAT' | 'ATB' | 'DomeClosure'>('FAT');
+  const [isTracking, setIsTracking] = useState(false);
+  const [gpsPath, setGpsPath] = useState<MapModule.GeoPoint[]>([]);
+  const [trackedDistance, setTrackedDistance] = useState(0);
+
+  const handleAddNode = async () => {
+    if (!currentLocation || !newNodeName) {
+      Alert.alert('Error', 'Please enter a node name and have location enabled');
+      return;
+    }
+
+    const newNode = await MapModule.createNewNode({
+      latitude: currentLocation.latitude,
+      longitude: currentLocation.longitude,
+      type: newNodeType,
+      nodeId: `${newNodeType.toUpperCase()}-${Date.now()}`,
+      name: newNodeName,
+      category: 'Distribution',
+      source: 'manual',
+    });
+
+    setAllNodes([...allNodes, newNode]);
+    await MapModule.saveMapNodes([...allNodes, newNode]);
+    setShowAddNodeModal(false);
+    setNewNodeName('');
+    Alert.alert('Success', `Node "${newNodeName}" added to map`);
+  };
+
+  const startGPSTrace = () => {
     setIsTracking(true);
     setGpsPath([]);
-    
-    const subscription = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.BestForNavigation,
-        timeInterval: 5000,
-      },
-      (location) => {
-        const coord: [number, number] = [
-          location.coords.latitude,
-          location.coords.longitude,
-        ];
-        setCurrentLocation(location.coords);
-        setGpsPath((prev) => [...prev, coord]);
-      }
+    setTrackedDistance(0);
+    if (currentLocation) {
+      setGpsPath([currentLocation]);
+    }
+  };
+
+  const stopGPSTrace = async () => {
+    setIsTracking(false);
+    if (gpsPath.length > 1 && allNodes.length >= 2) {
+      const distance = MapModule.calculatePathDistance(gpsPath);
+      setTrackedDistance(distance);
+
+      const line = await MapModule.createLineFromGPSTrace(
+        allNodes[0].id,
+        allNodes[1].id,
+        gpsPath
+      );
+
+      const newLine = await MapModule.createNewFiberLine(line);
+      setFiberLines([...fiberLines, newLine]);
+      await MapModule.saveFiberLines([...fiberLines, newLine]);
+
+      Alert.alert('GPS Trace Complete', `Distance: ${distance.toFixed(3)} km`);
+    }
+  };
+
+  // ===== WORKFLOW 5: AUTO DISTANCE CALCULATION =====
+  const getLineDistance = (line: MapModule.FiberLine) => {
+    return `${line.straightDistance.toFixed(3)} km (route: ${line.routeDistance.toFixed(3)} km)`;
+  };
+
+  // ===== WORKFLOW 6: POWER MAPPING =====
+  const [powerReadings, setPowerReadings] = useState<MapModule.PowerReading[]>([]);
+  const [showPowerModal, setShowPowerModal] = useState(false);
+  const [powerIn, setPowerIn] = useState('');
+
+  const recordPower = async () => {
+    if (!selectedNode || !powerIn) {
+      Alert.alert('Error', 'Select a node and enter power value');
+      return;
+    }
+
+    const reading = await MapModule.recordManualPowerEntry(
+      selectedNode.id,
+      parseFloat(powerIn)
     );
 
-    return () => subscription.remove();
+    setPowerReadings([...powerReadings, reading]);
+    await MapModule.savePowerReadings([...powerReadings, reading]);
+    setPowerIn('');
+    setShowPowerModal(false);
+    Alert.alert('Success', `Power reading recorded for ${selectedNode.name}`);
+
+    // Queue for offline-first sync
+    await MapModule.queueOfflineAction({
+      id: reading.id,
+      type: 'power_recording',
+      nodeId: selectedNode.id,
+      timestamp: Date.now(),
+    });
   };
 
-  const stopTracking = () => {
-    setIsTracking(false);
+  // ===== WORKFLOW 7: NODE LINKING =====
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkNodeId, setLinkNodeId] = useState('');
+
+  const linkNodes = async () => {
+    if (!selectedNode || !linkNodeId) {
+      Alert.alert('Error', 'Select source and target nodes');
+      return;
+    }
+
+    await MapModule.linkNodes(selectedNode.id, linkNodeId, undefined, 'parent-child');
+    setShowLinkModal(false);
+    Alert.alert('Success', 'Nodes linked');
   };
 
-  // Combine all nodes
-  const allNodes = [
-    ...olts.map((n: any) => ({ ...n, type: 'OLT', nodeId: `olt-${n.id}` })),
-    ...splitters.map((n: any) => ({ ...n, type: 'Splitter', nodeId: `splitter-${n.id}` })),
-    ...fats.map((n: any) => ({ ...n, type: 'FAT', nodeId: `fat-${n.id}` })),
-    ...atbs.map((n: any) => ({ ...n, type: 'ATB', nodeId: `atb-${n.id}` })),
-    ...closures.map((n: any) => ({ ...n, type: 'Closure', nodeId: `closure-${n.id}` })),
-  ];
+  // ===== WORKFLOW 8: DAILY REPORTS =====
+  const generateReport = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const report = await MapModule.generateDailyReport(today, 'current-tech');
+
+    const csv = MapModule.generateReportCSV(report);
+    Alert.alert('Daily Report', `Generated report with ${report.actions.length} actions\nTotal distance: ${report.totalDistance.toFixed(2)} km`);
+  };
+
+  // ===== WORKFLOW 9: CLOUD SYNC =====
+  const [syncStatus, setSyncStatus] = useState<'offline' | 'syncing' | 'synced'>('offline');
+
+  const syncToCloud = async () => {
+    setSyncStatus('syncing');
+    const isOnline = await MapModule.checkInternetConnection();
+
+    if (isOnline) {
+      const result = await MapModule.syncToCloud(
+        'https://api.fibertrace.app/api',
+        'auth-token-here'
+      );
+
+      if (result.success) {
+        setSyncStatus('synced');
+        Alert.alert('Sync Complete', 'All data synced to cloud');
+      } else {
+        setSyncStatus('offline');
+        Alert.alert('Sync Failed', 'Will retry when online');
+      }
+    } else {
+      setSyncStatus('offline');
+      Alert.alert('Offline', 'Data queued for sync when online');
+    }
+  };
+
+  // ===== WORKFLOW 10: OFFLINE FIRST =====
+  const [pendingActions, setPendingActions] = useState(0);
+
+  useEffect(() => {
+    const checkPending = async () => {
+      const count = await MapModule.getPendingActionsCount();
+      setPendingActions(count);
+    };
+    checkPending();
+  }, []);
 
   const nodeColors: Record<string, string> = {
     OLT: '#10b981',
     Splitter: '#3b82f6',
     FAT: '#f59e0b',
     ATB: '#ec4899',
-    Closure: '#8b5cf6',
-  };
-
-  const toggleNodeSelection = (nodeId: number) => {
-    const newSelected = new Set(selectedNodes);
-    if (newSelected.has(nodeId)) {
-      newSelected.delete(nodeId);
-    } else {
-      newSelected.add(nodeId);
-    }
-    setSelectedNodes(newSelected);
+    DomeClosure: '#8b5cf6',
+    UndergroundClosure: '#8b5cf6',
+    PedestalCabinet: '#06b6d4',
+    Junction: '#a855f7',
+    MiniNode: '#f59e0b',
+    DPBox: '#84cc16',
   };
 
   return (
     <View style={styles.container}>
-      {/* Map View */}
+      {/* MAP VIEW */}
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={region}
         onRegionChange={setRegion}
       >
-        {/* Markers for all nodes */}
         {allNodes.map((node) => (
           <Marker
-            key={node.nodeId}
-            coordinate={{
-              latitude: node.latitude,
-              longitude: node.longitude,
-            }}
-            pinColor={selectedNodes.has(node.id) ? colors.primary : nodeColors[node.type]}
+            key={node.id}
+            coordinate={{ latitude: node.latitude, longitude: node.longitude }}
+            pinColor={nodeColors[node.type] || colors.primary}
             title={node.name}
-            description={`${node.type} - Power: ${node.inputPower || 'N/A'}`}
-            onPress={() => {
-              setSelectedNode(node);
-              toggleNodeSelection(node.id);
-            }}
+            onPress={() => handleMapPress({ latitude: node.latitude, longitude: node.longitude })}
           />
         ))}
 
-        {/* Current location marker */}
         {currentLocation && (
           <Marker
-            coordinate={{
-              latitude: currentLocation.latitude,
-              longitude: currentLocation.longitude,
-            }}
+            coordinate={{ latitude: currentLocation.latitude, longitude: currentLocation.longitude }}
             pinColor={colors.primary}
             title="Your Location"
           />
         )}
 
-        {/* GPS path */}
         {gpsPath.length > 1 && (
           <Polyline
-            coordinates={gpsPath.map((p) => ({
-              latitude: p[0],
-              longitude: p[1],
-            }))}
+            coordinates={gpsPath}
             strokeColor={colors.primary}
             strokeWidth={3}
           />
         )}
       </MapView>
 
-      {/* Bottom Panel - Node Info & Controls */}
-      {selectedNode && (
+      {/* SELECTED NODE PANEL */}
+      {selectedNode && showNodePanel && (
         <View style={styles.nodePanel}>
-          <Text style={styles.nodeName}>{selectedNode.name}</Text>
+          <View style={styles.panelHeader}>
+            <Text style={styles.nodeName}>{selectedNode.name}</Text>
+            <TouchableOpacity onPress={() => setShowNodePanel(false)}>
+              <Text style={styles.closeBtn}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
           <Text style={styles.nodeType}>{selectedNode.type}</Text>
-          <Text style={styles.nodeInfo}>
-            Power: {selectedNode.inputPower || 'N/A'} dB
-          </Text>
-          <Text style={styles.nodeInfo}>
-            Location: {selectedNode.location || 'N/A'}
-          </Text>
+          {selectedNode.powerIn && (
+            <Text style={styles.nodeInfo}>Power: {selectedNode.powerIn.toFixed(2)} dBm</Text>
+          )}
+          <Text style={styles.nodeInfo}>ID: {selectedNode.nodeId}</Text>
+
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => setShowPowerModal(true)}>
+              <Text style={styles.actionBtnText}>Power</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.accent }]} onPress={() => setShowLinkModal(true)}>
+              <Text style={styles.actionBtnText}>Link</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={generateReport}>
+              <Text style={styles.actionBtnText}>Report</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
-      {/* Control Buttons */}
+      {/* CONTROL PANEL */}
       <View style={styles.controlPanel}>
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.primary, flex: 1 }]}
-            onPress={isTracking ? stopTracking : startTracking}
+            onPress={() => setShowAddNodeModal(true)}
           >
-            <Text style={styles.buttonText}>
-              {isTracking ? 'Stop GPS' : 'Start GPS'}
-            </Text>
+            <Text style={styles.buttonText}>+ Node</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[
-              styles.button,
-              {
-                backgroundColor: colors.accent,
-                flex: 1,
-                marginLeft: 8,
-                opacity: selectedNodes.size > 0 ? 1 : 0.5,
-              },
-            ]}
-            onPress={() => setShowJobForm(true)}
-            disabled={selectedNodes.size === 0 && gpsPath.length === 0}
+            style={[styles.button, { backgroundColor: colors.accent, flex: 1, marginLeft: 8 }]}
+            onPress={isTracking ? stopGPSTrace : startGPSTrace}
           >
-            <Text style={styles.buttonText}>
-              {selectedNodes.size > 0 ? `${selectedNodes.size} Nodes` : 'Create Job'}
-            </Text>
+            <Text style={styles.buttonText}>{isTracking ? 'Stop GPS' : 'Start GPS'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: syncStatus === 'synced' ? '#10b981' : colors.primary, flex: 1, marginLeft: 8 }]}
+            onPress={syncToCloud}
+          >
+            <Text style={styles.buttonText}>Sync</Text>
           </TouchableOpacity>
         </View>
 
         <Text style={styles.statsText}>
-          {gpsPath.length > 0
-            ? `GPS Points: ${gpsPath.length} | Nodes: ${selectedNodes.size}`
-            : `Nodes: ${selectedNodes.size}`}
+          Nodes: {allNodes.length} | Lines: {fiberLines.length} | Pending: {pendingActions} | Status: {syncStatus}
         </Text>
       </View>
 
-      {/* Job Form Modal */}
-      <JobFormModal
-        visible={showJobForm}
-        onClose={() => setShowJobForm(false)}
-        onSuccess={() => {
-          setSelectedNodes(new Set());
-          setGpsPath([]);
-        }}
-        gpsRoute={gpsPath}
-        selectedNodeIds={Array.from(selectedNodes)}
-      />
+      {/* ADD NODE MODAL */}
+      <Modal visible={showAddNodeModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add New Node</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Node Name"
+              placeholderTextColor={colors.mutedForeground}
+              value={newNodeName}
+              onChangeText={setNewNodeName}
+            />
+
+            <View style={styles.typeSelector}>
+              {(['OLT', 'Splitter', 'FAT', 'ATB', 'DomeClosure'] as const).map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.typeOption,
+                    { backgroundColor: newNodeType === type ? colors.primary : colors.card },
+                  ]}
+                  onPress={() => setNewNodeType(type)}
+                >
+                  <Text style={styles.typeText}>{type}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={handleAddNode}>
+                <Text style={styles.buttonText}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.mutedForeground, marginLeft: 8 }]} onPress={() => setShowAddNodeModal(false)}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* POWER MODAL */}
+      <Modal visible={showPowerModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Record Power Reading</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Power In (dBm)"
+              placeholderTextColor={colors.mutedForeground}
+              value={powerIn}
+              onChangeText={setPowerIn}
+              keyboardType="decimal-pad"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={recordPower}>
+                <Text style={styles.buttonText}>Record</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.mutedForeground, marginLeft: 8 }]} onPress={() => setShowPowerModal(false)}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* LINK MODAL */}
+      <Modal visible={showLinkModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Link Node</Text>
+
+            <ScrollView>
+              {allNodes
+                .filter((n) => n.id !== selectedNode?.id)
+                .map((node) => (
+                  <TouchableOpacity
+                    key={node.id}
+                    style={[styles.listItem, { backgroundColor: linkNodeId === node.id ? colors.primary : colors.card }]}
+                    onPress={() => setLinkNodeId(node.id)}
+                  >
+                    <Text style={styles.listItemText}>{node.name} ({node.type})</Text>
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={linkNodes}>
+                <Text style={styles.buttonText}>Link</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.mutedForeground, marginLeft: 8 }]} onPress={() => setShowLinkModal(false)}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -293,22 +493,48 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    maxHeight: '40%',
+  },
+  panelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   nodeName: {
     color: colors.foreground,
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
+  },
+  closeBtn: {
+    color: colors.foreground,
+    fontSize: 24,
   },
   nodeType: {
     color: colors.primary,
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   nodeInfo: {
     color: colors.mutedForeground,
     fontSize: 12,
     marginBottom: 4,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  actionBtn: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  actionBtnText: {
+    color: colors.primaryForeground,
+    fontSize: 12,
+    fontWeight: '600',
   },
   controlPanel: {
     position: 'absolute',
@@ -324,6 +550,7 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     marginBottom: 8,
+    gap: 4,
   },
   button: {
     padding: 12,
@@ -332,12 +559,73 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: colors.primaryForeground,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   statsText: {
     color: colors.mutedForeground,
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    padding: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    color: colors.foreground,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 12,
+    color: colors.foreground,
+    marginBottom: 12,
+  },
+  typeSelector: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  typeOption: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  typeText: {
+    color: colors.primaryForeground,
+    fontSize: 12,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    marginTop: 16,
+  },
+  modalBtn: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  listItem: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  listItemText: {
+    color: colors.foreground,
+    fontSize: 14,
   },
 });
