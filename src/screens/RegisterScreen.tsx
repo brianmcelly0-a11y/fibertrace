@@ -2,45 +2,58 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ImageBackground, ScrollView } from 'react-native';
 import { colors } from '../theme/colors';
 
-interface LoginScreenProps {
-  onLoginSuccess?: (user: { email: string; role: string; technicianId: string }) => void;
-  onSwitchToRegister?: () => void;
-  onSwitchToRecovery?: () => void;
+interface RegisterScreenProps {
+  onRegisterSuccess?: (user: { email: string; role: string; technicianId: string }) => void;
+  onSwitchToLogin?: () => void;
 }
 
-export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwitchToRecovery }: LoginScreenProps) {
-  const [email, setEmail] = useState('tech@example.com');
-  const [password, setPassword] = useState('password123');
+export default function RegisterScreen({ onRegisterSuccess, onSwitchToLogin }: RegisterScreenProps) {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
-      return;
+  const validateForm = () => {
+    if (!fullName.trim()) {
+      Alert.alert('Error', 'Please enter your full name');
+      return false;
     }
+    if (!email.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email');
+      return false;
+    }
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return false;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return false;
+    }
+    return true;
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
 
     try {
-      if (email.includes('@') && password.length >= 6) {
-        const mockUser = {
-          email,
-          role: 'Technician' as const,
-          technicianId: `tech-${Date.now()}`,
-        };
-        
-        setTimeout(() => {
-          onLoginSuccess?.(mockUser);
-          setLoading(false);
-        }, 500);
-      } else {
+      const newUser = {
+        email,
+        role: 'Technician' as const,
+        technicianId: `tech-${Date.now()}`,
+      };
+      
+      setTimeout(() => {
+        onRegisterSuccess?.(newUser);
         setLoading(false);
-        Alert.alert('Invalid Credentials', 'Use valid email and password with 6+ characters');
-      }
+      }, 500);
     } catch (error) {
       setLoading(false);
-      Alert.alert('Error', 'Login failed');
+      Alert.alert('Error', 'Registration failed');
     }
   };
 
@@ -54,10 +67,22 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
         <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.logoContainer}>
             <Text style={styles.logo}>FiberTrace</Text>
-            <Text style={styles.tagline}>Technician Portal</Text>
+            <Text style={styles.tagline}>Create Account</Text>
           </View>
 
           <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Full Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="John Doe"
+                placeholderTextColor={colors.mutedForeground}
+                value={fullName}
+                onChangeText={setFullName}
+                editable={!loading}
+              />
+            </View>
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -90,32 +115,36 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
               </View>
             </View>
 
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor={colors.mutedForeground}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                editable={!loading}
+                secureTextEntry={!showPassword}
+              />
+            </View>
+
             <TouchableOpacity
-              style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-              onPress={handleLogin}
+              style={[styles.registerButton, loading && styles.registerButtonDisabled]}
+              onPress={handleRegister}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color={colors.background} size="small" />
               ) : (
-                <Text style={styles.loginButtonText}>Login</Text>
+                <Text style={styles.registerButtonText}>Create Account</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <View style={styles.linkContainer}>
-            <TouchableOpacity onPress={onSwitchToRegister}>
-              <Text style={styles.linkText}>Don't have account? <Text style={styles.linkHighlight}>Register</Text></Text>
+            <TouchableOpacity onPress={onSwitchToLogin}>
+              <Text style={styles.linkText}>Already have account? <Text style={styles.linkHighlight}>Login</Text></Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={onSwitchToRecovery} style={{ marginTop: 8 }}>
-              <Text style={styles.linkText}><Text style={styles.linkHighlight}>Forgot Password?</Text></Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.featureList}>
-            <FeatureItem title="🔐 Secure Auth" description="Technician account with role-based access" />
-            <FeatureItem title="📱 Offline First" description="Work without internet connection" />
-            <FeatureItem title="🔄 Auto Sync" description="Sync when connection returns" />
           </View>
         </ScrollView>
       </View>
@@ -123,37 +152,24 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
   );
 }
 
-function FeatureItem({ title, description }: { title: string; description: string }) {
-  return (
-    <View style={styles.featureItem}>
-      <Text style={styles.featureTitle}>{title}</Text>
-      <Text style={styles.featureDescription}>{description}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   background: { flex: 1, width: '100%', height: '100%' },
   overlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.85)' },
-  container: { flexGrow: 1, paddingHorizontal: 20, paddingVertical: 40 },
-  logoContainer: { marginTop: 40, marginBottom: 40, alignItems: 'center' },
+  container: { flexGrow: 1, paddingHorizontal: 20, paddingVertical: 20 },
+  logoContainer: { marginTop: 30, marginBottom: 30, alignItems: 'center' },
   logo: { fontSize: 36, fontWeight: 'bold', color: '#00ffff', textShadowColor: '#00ffff', textShadowRadius: 10 },
   tagline: { fontSize: 14, color: colors.mutedForeground, marginTop: 8 },
   formContainer: { marginBottom: 20 },
-  inputGroup: { marginBottom: 16 },
+  inputGroup: { marginBottom: 12 },
   label: { fontSize: 13, color: colors.foreground, marginBottom: 6, fontWeight: '600' },
   input: { backgroundColor: 'rgba(30, 41, 59, 0.8)', borderWidth: 1, borderColor: '#00ffff', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 10, color: colors.foreground },
   passwordContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(30, 41, 59, 0.8)', borderWidth: 1, borderColor: '#00ffff', borderRadius: 6 },
   passwordInput: { flex: 1, paddingHorizontal: 12, paddingVertical: 10, color: colors.foreground },
   showPasswordButton: { fontSize: 12, color: '#00ffff', paddingHorizontal: 12, fontWeight: '600' },
-  loginButton: { backgroundColor: '#00ffff', paddingVertical: 12, borderRadius: 6, alignItems: 'center', marginTop: 8 },
-  loginButtonDisabled: { opacity: 0.6 },
-  loginButtonText: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
+  registerButton: { backgroundColor: '#00ffff', paddingVertical: 12, borderRadius: 6, alignItems: 'center', marginTop: 8 },
+  registerButtonDisabled: { opacity: 0.6 },
+  registerButtonText: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
   linkContainer: { alignItems: 'center', marginBottom: 24 },
   linkText: { fontSize: 12, color: colors.mutedForeground },
   linkHighlight: { color: '#00ffff', fontWeight: '600' },
-  featureList: { gap: 12, marginTop: 24 },
-  featureItem: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(0, 255, 255, 0.2)' },
-  featureTitle: { fontSize: 13, fontWeight: '600', color: '#00ffff' },
-  featureDescription: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
 });

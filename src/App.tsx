@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
+import PasswordRecoveryScreen from './screens/PasswordRecoveryScreen';
 import { MapScreen } from './screens/MapScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { NodeManagementScreen } from './screens/NodeManagementScreen';
@@ -45,6 +47,7 @@ function AppContent() {
   const [syncStatus, setSyncStatus] = React.useState<{ isOnline: boolean; unsynced: number }>({ isOnline: true, unsynced: 0 });
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [authScreen, setAuthScreen] = React.useState<'login' | 'register' | 'recovery'>('login');
 
   useEffect(() => {
     initializeOfflineStorage().catch(error => {
@@ -92,12 +95,30 @@ function AppContent() {
     setActiveTab('Dashboard');
   };
 
-  // Show login screen if not logged in
+  // Show auth screens if not logged in
   if (!isLoggedIn && !loading) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <QueryClientProvider client={queryClient}>
-          <LoginScreen onLoginSuccess={handleLoginSuccess} />
+          {authScreen === 'login' && (
+            <LoginScreen 
+              onLoginSuccess={handleLoginSuccess}
+              onSwitchToRegister={() => setAuthScreen('register')}
+              onSwitchToRecovery={() => setAuthScreen('recovery')}
+            />
+          )}
+          {authScreen === 'register' && (
+            <RegisterScreen
+              onRegisterSuccess={handleLoginSuccess}
+              onSwitchToLogin={() => setAuthScreen('login')}
+            />
+          )}
+          {authScreen === 'recovery' && (
+            <PasswordRecoveryScreen
+              onRecoverySuccess={() => setAuthScreen('login')}
+              onSwitchToLogin={() => setAuthScreen('login')}
+            />
+          )}
         </QueryClientProvider>
       </View>
     );
