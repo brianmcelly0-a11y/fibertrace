@@ -30,7 +30,9 @@ const Location = {
     coords: { latitude: 37.78825, longitude: -122.4324 },
   }),
   Accuracy: { BestForNavigation: 6 },
-  watchPositionAsync: async () => ({ remove: () => {} }),
+  watchPositionAsync: async (options: any, callback: (location: any) => void) => ({ 
+    remove: () => {} 
+  }),
 };
 
 const { width, height } = Dimensions.get('window');
