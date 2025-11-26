@@ -1,3 +1,3 @@
 #!/bin/bash
 cd /home/runner/workspace
-npx expo start --web --port 5000
+/home/runner/workspace/node_modules/.bin/expo start --web --port 5000
