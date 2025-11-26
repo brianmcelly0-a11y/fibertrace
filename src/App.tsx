@@ -35,7 +35,7 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   const [activeTab, setActiveTab] = React.useState('Dashboard');
-  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
   useEffect(() => {
     initializeOfflineStorage().catch(error => {
@@ -66,60 +66,118 @@ function AppContent() {
   const ActiveScreen = screens[activeTab];
   const tabs = Object.keys(screens);
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setMenuOpen(false);
+  };
+
   return (
-    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <QueryClientProvider client={queryClient}>
-        {/* Collapsible Sidebar */}
+        {/* Top Navigation Bar */}
         <View style={{
-          width: sidebarCollapsed ? 60 : 200,
+          height: 60,
           backgroundColor: colors.card,
-          borderRightWidth: 1,
-          borderRightColor: colors.border,
-          transition: 'width 0.3s ease',
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          justifyContent: 'space-between',
         }}>
-          {/* Toggle Button */}
+          {/* Hamburger Menu Button */}
           <TouchableOpacity
-            onPress={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onPress={() => setMenuOpen(!menuOpen)}
             style={{
-              padding: 16,
-              backgroundColor: colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderBottomWidth: 1,
-              borderBottomColor: colors.border,
+              padding: 8,
             }}
           >
-            <Text style={{ fontSize: 18, color: colors.background, fontWeight: 'bold' }}>
-              {sidebarCollapsed ? '☰' : '✕'}
-            </Text>
+            <Text style={{ fontSize: 24, color: colors.foreground }}>☰</Text>
           </TouchableOpacity>
 
-          {/* Navigation Items */}
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {tabs.map(tab => (
-              <TouchableOpacity
-                key={tab}
-                onPress={() => setActiveTab(tab)}
-                style={{
-                  paddingVertical: 12,
-                  paddingHorizontal: sidebarCollapsed ? 8 : 16,
-                  backgroundColor: activeTab === tab ? colors.primary : 'transparent',
-                  borderLeftWidth: activeTab === tab ? 4 : 0,
-                  borderLeftColor: colors.primary,
-                  alignItems: sidebarCollapsed ? 'center' : 'flex-start',
-                }}
-              >
-                <Text style={{
-                  fontSize: sidebarCollapsed ? 10 : 14,
-                  color: activeTab === tab ? colors.background : colors.foreground,
-                  fontWeight: activeTab === tab ? 'bold' : 'normal',
-                }}>
-                  {sidebarCollapsed ? tab.slice(0, 2) : tab}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {/* Current Screen Title */}
+          <Text style={{
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: colors.foreground,
+            flex: 1,
+            marginLeft: 16,
+          }}>
+            {activeTab}
+          </Text>
+
+          {/* App Title/Logo */}
+          <Text style={{
+            fontSize: 16,
+            fontWeight: '600',
+            color: colors.primary,
+          }}>
+            FiberTrace
+          </Text>
         </View>
+
+        {/* Overlay when menu is open */}
+        {menuOpen && (
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setMenuOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 60,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 999,
+            }}
+          />
+        )}
+
+        {/* Slide-out Navigation Menu */}
+        {menuOpen && (
+          <View style={{
+            position: 'absolute',
+            top: 60,
+            left: 0,
+            bottom: 0,
+            width: 280,
+            backgroundColor: colors.card,
+            borderRightWidth: 1,
+            borderRightColor: colors.border,
+            zIndex: 1000,
+            shadowColor: '#000',
+            shadowOffset: { width: 2, height: 0 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 5,
+          }}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {tabs.map(tab => (
+                <TouchableOpacity
+                  key={tab}
+                  onPress={() => handleTabChange(tab)}
+                  style={{
+                    paddingVertical: 16,
+                    paddingHorizontal: 20,
+                    backgroundColor: activeTab === tab ? colors.primary : 'transparent',
+                    borderLeftWidth: activeTab === tab ? 4 : 0,
+                    borderLeftColor: colors.primary,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 16,
+                    color: activeTab === tab ? colors.background : colors.foreground,
+                    fontWeight: activeTab === tab ? 'bold' : 'normal',
+                  }}>
+                    {tab}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Main Content Area */}
         <View style={{ flex: 1 }}>
