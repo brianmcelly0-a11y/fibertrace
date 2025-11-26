@@ -1,17 +1,58 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { colors } from '../theme/colors';
 import * as Analytics from '@/lib/analytics';
 
+const MOCK_JOBS: any[] = Array.from({ length: 25 }, (_, i) => ({
+  id: `j${i}`,
+  status: ['Completed', 'In Progress', 'Pending'][Math.floor(Math.random() * 3)],
+  duration: Math.floor(Math.random() * 14400) + 3600,
+  estimatedCost: Math.floor(Math.random() * 2000) + 500,
+  actualCost: Math.floor(Math.random() * 2200) + 450,
+}));
+
 export default function AnalyticsScreen() {
   const [period, setPeriod] = useState('Monthly');
-  const mockJobs: any[] = [];
-  const report = Analytics.generateAnalyticsReport(mockJobs, period);
-  const metrics = Analytics.getPerformanceMetrics(mockJobs);
-  const costBreakdown = Analytics.getCostBreakdown(mockJobs);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [period]);
+
+  const loadAnalytics = async () => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const report = Analytics.generateAnalyticsReport(MOCK_JOBS, period);
+  const metrics = Analytics.getPerformanceMetrics(MOCK_JOBS);
+  const costBreakdown = Analytics.getCostBreakdown(MOCK_JOBS);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading analytics...</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
       {/* Period Selector */}
       <View style={styles.periodSelector}>
         {['Daily', 'Weekly', 'Monthly', 'Yearly'].map(p => (
@@ -116,6 +157,7 @@ function SummaryRow({ label, value, highlight }: { label: string; value: string;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  loadingText: { fontSize: 14, color: colors.mutedForeground, marginTop: 12 },
   periodSelector: { flexDirection: 'row', padding: 12, gap: 8 },
   periodButton: { flex: 1, paddingVertical: 8, borderRadius: 6, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
   periodButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
