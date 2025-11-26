@@ -9,7 +9,7 @@ export interface User {
 }
 
 const AUTH_KEY = 'fibertrace_user';
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || process.env.REACT_APP_API_URL || 'https://api.fibertrace.app/api';
 
 // Save user session
 export async function saveUser(user: User): Promise<void> {

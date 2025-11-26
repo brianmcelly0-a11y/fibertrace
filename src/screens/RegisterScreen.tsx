@@ -43,7 +43,8 @@ export default function RegisterScreen({ onRegisterSuccess, onSwitchToLogin }: R
     try {
       // Try to register via API
       try {
-        const response = await fetch('http://localhost:5001/api/auth/register', {
+        const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://api.fibertrace.app/api';
+        const response = await fetch(`${apiUrl}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ full_name: fullName, email, password_hash: password }),

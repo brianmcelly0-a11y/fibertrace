@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "start": "expo start",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:apk": "eas build --platform android --build-type apk",
+    "build:aab": "eas build --platform android --build-type app-bundle",
+    "build:ios": "eas build --platform ios",
+    "submit": "eas submit",
+    "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.1.3",
@@ -17,6 +22,9 @@
     "@types/react": "~18.2.45",
     "date-fns": "^3.0.0",
     "expo": "~50.0.14",
+    "expo-constants": "^18.0.10",
+    "expo-font": "^14.0.9",
+    "expo-splash-screen": "^31.0.11",
     "expo-status-bar": "~1.11.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",

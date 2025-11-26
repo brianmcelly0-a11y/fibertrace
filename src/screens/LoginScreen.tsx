@@ -26,7 +26,8 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
       if (email.includes('@') && password.length >= 6) {
         // Try to login via API
         try {
-          const response = await fetch('http://localhost:5001/api/auth/login', {
+          const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://api.fibertrace.app/api';
+          const response = await fetch(`${apiUrl}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password_hash: password }),
@@ -44,7 +45,7 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
             throw new Error('Invalid credentials');
           }
         } catch (apiError) {
-          Alert.alert('Error', 'Server connection failed. Please ensure backend is running on localhost:5001');
+          Alert.alert('Connection Error', 'Unable to reach authentication server. Please check your internet connection.');
           console.error('Login API error:', apiError);
         }
       } else {

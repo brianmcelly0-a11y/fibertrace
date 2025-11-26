@@ -4,29 +4,44 @@
     "slug": "fibertrace",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./public/assets/fiber-bg.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a0a2e"
+      "image": "./public/assets/fiber-bg.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0a1628"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
+    "plugins": [
+      ["expo-font"],
+      ["expo-splash-screen"]
+    ],
     "ios": {
       "supportsTabletMode": true,
-      "bundleIdentifier": "com.fibertrace.app"
+      "bundleIdentifier": "com.fibertrace.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "FiberTrace needs local network access for offline operations",
+        "NSBonjourServiceTypes": ["_fibertrace._tcp"]
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a0a2e"
+        "foregroundImage": "./public/assets/fiber-bg.png",
+        "backgroundColor": "#0a1628"
       },
-      "package": "com.fibertrace.app"
+      "package": "com.fibertrace.app",
+      "versionCode": 1,
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "INTERNET"]
     },
     "web": {
-      "favicon": "./assets/favicon.svg"
+      "favicon": "./public/assets/fiber-bg.png"
+    },
+    "extra": {
+      "apiUrl": "https://api.fibertrace.app/api",
+      "environment": "production"
     }
   }
 }
