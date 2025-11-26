@@ -6,6 +6,9 @@ import { DashboardScreen } from './screens/DashboardScreen';
 import { NodeManagementScreen } from './screens/NodeManagementScreen';
 import { RouteManagementScreen } from './screens/RouteManagementScreen';
 import JobListScreen from './screens/JobListScreen';
+import InventoryScreen from './screens/InventoryScreen';
+import ScheduleScreen from './screens/ScheduleScreen';
+import AnalyticsScreen from './screens/AnalyticsScreen';
 import { colors } from './theme/colors';
 import { initializeOfflineStorage } from './lib/offlineStorage';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -36,6 +39,9 @@ function AppContent() {
     Nodes: NodeManagementScreen,
     Routes: RouteManagementScreen,
     Jobs: JobListScreen,
+    Inventory: InventoryScreen,
+    Schedule: ScheduleScreen,
+    Analytics: AnalyticsScreen,
   };
 
   const ActiveScreen = screens[activeTab];
