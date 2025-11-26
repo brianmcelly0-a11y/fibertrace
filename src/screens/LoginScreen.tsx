@@ -41,8 +41,12 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
               technicianId: `tech-${data.user.id || Date.now()}`,
             };
             onLoginSuccess?.(user);
+          } else if (response.status === 401) {
+            Alert.alert('Wrong Password', 'The password you entered is incorrect. Please try again.');
+          } else if (response.status === 404) {
+            Alert.alert('Account Not Found', 'No account exists with this email address.');
           } else {
-            throw new Error('Invalid credentials');
+            throw new Error('Login failed. Please try again.');
           }
         } catch (apiError) {
           Alert.alert('Connection Error', 'Unable to reach authentication server. Please check your internet connection.');
