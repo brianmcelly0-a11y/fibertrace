@@ -1,0 +1,314 @@
+Here is a **clear, structured, teen-safe**, summarized **Database Design** for your full Fiber Field Management System.
+(It matches all features you asked for: nodes, splitters, closures, FAT/ATB, power mapping, jobs, reports, map data, GPS/offline maps, distance calculations, Bluetooth meter readings, user accounts, daily reporting, asset mapping, updates, etc.)
+
+---
+
+# ⭐ **DATABASE DESIGN (FULL SYSTEM)**
+
+A clean, normalized structure you can implement in **SQLite, MySQL, PostgreSQL**, or any mobile-friendly DB.
+
+---
+
+# **1. Users Table**
+
+Stores all user accounts.
+
+**users**
+
+* id (PK)
+* full_name
+* email
+* phone
+* password_hash
+* role (technician, supervisor, admin)
+* created_at
+* last_login
+
+---
+
+# **2. Sessions / Login History**
+
+**login_history**
+
+* id (PK)
+* user_id (FK)
+* login_time
+* device_info
+
+---
+
+# **3. Map Assets (Master Tables)**
+
+These store all fiber infrastructure elements.
+
+## **3.1 Nodes (Active Components)**
+
+**nodes**
+
+* id (PK)
+* node_name
+* node_type (Primary, Secondary, Booster, Power Node)
+* latitude
+* longitude
+* elevation
+* power_status (on/off/low)
+* power_rating
+* description
+* created_at
+
+---
+
+## **3.2 Closures**
+
+(FAT, ATB, Dome closures, Inline closures, etc.)
+
+**closures**
+
+* id (PK)
+* closure_name
+* closure_type (FAT, ATB, Dome, Inline)
+* latitude
+* longitude
+* capacity_total
+* capacity_used
+* parent_node_id (FK nodes.id)
+* description
+
+---
+
+## **3.3 Splitters**
+
+(1:2, 1:4, 1:8, 1:16, 1:32, 1:64)
+
+**splitters**
+
+* id (PK)
+* splitter_label
+* ratio (string: 1:8, 1:16, etc.)
+* insertion_loss
+* location_type (node, closure, cabinet)
+* host_id (FK → nodes or closures)
+* latitude
+* longitude
+* created_at
+
+---
+
+## **3.4 Fiber Cables / Lines**
+
+**fiber_lines**
+
+* id (PK)
+* line_name
+* fiber_count
+* length_meters
+* start_point_type (node/closure/splitter)
+* start_point_id
+* end_point_type
+* end_point_id
+* created_at
+
+---
+
+# **4. Power Mapping**
+
+Every node or line has power data.
+
+**power_readings**
+
+* id (PK)
+* node_id (FK)
+* voltage
+* current
+* battery_level
+* timestamp
+
+---
+
+# **5. Customer Drops / FAT Ports**
+
+**fat_ports**
+
+* id (PK)
+* closure_id (FK)
+* port_number
+* status (used/free/fault)
+* customer_name
+* customer_phone
+* last_service_date
+
+---
+
+# **6. Bluetooth Meter Readings**
+
+Auto-updated values from splicer/OTDR/power meter.
+
+**meter_readings**
+
+* id (PK)
+* device_type (OTDR, Power Meter, Splicer)
+* reading_value
+* reading_unit (dBm, km, splice_loss)
+* linked_asset_type (node, closure, splitter)
+* linked_asset_id
+* timestamp
+
+---
+
+# **7. Jobs / Work Orders**
+
+Includes installation, maintenance, repair, upgrades.
+
+**jobs**
+
+* id (PK)
+* job_title
+* job_type (maintenance, repair, installation, power-check)
+* assigned_to_user_id
+* asset_type (node/closure/fat/splitter/line)
+* asset_id
+* scheduled_date
+* status (pending, in-progress, completed)
+* created_at
+
+### Job Actions
+
+**job_actions**
+
+* id (PK)
+* job_id (FK)
+* action_description
+* before_photo_path
+* after_photo_path
+* gps_lat
+* gps_lon
+* timestamp
+
+---
+
+# **8. Daily Reports**
+
+**daily_reports**
+
+* id (PK)
+* user_id (FK)
+* date
+* summary
+* total_jobs
+* total_distance_walked
+* total_lines_added
+* power_issues
+* sync_status (synced/offline pending)
+
+---
+
+# **9. Map Cache (Offline Maps)**
+
+Stores offline map tiles.
+
+**map_tiles**
+
+* id (PK)
+* tile_x
+* tile_y
+* zoom_level
+* tile_image_blob
+* last_updated
+
+---
+
+# **10. GPS Tracking & Distance Calculations**
+
+**gps_logs**
+
+* id (PK)
+* user_id (FK)
+* latitude
+* longitude
+* timestamp
+
+Used to compute:
+
+* job-to-job distance
+* path walked
+* distance between assets
+
+---
+
+# **11. Asset Change Log**
+
+Tracks updates on map assets.
+
+**asset_updates**
+
+* id (PK)
+* asset_type
+* asset_id
+* user_id
+* change_description
+* old_value
+* new_value
+* timestamp
+
+---
+
+# **12. Notifications**
+
+**notifications**
+
+* id (PK)
+* user_id (FK)
+* message
+* type (alert, update, warning)
+* read_status (0/1)
+* timestamp
+
+---
+
+# **13. Files / Attachments**
+
+Images, PDFs, route sketches, etc.
+
+**files**
+
+* id (PK)
+* file_path
+* linked_type (job, node, closure)
+* linked_id
+* uploaded_by
+* timestamp
+
+---
+
+# ⭐ **HOW ALL TABLES CONNECT (Workflow Summary)**
+
+* **Users** log in → actions are tracked.
+* **Nodes, Closures, Splitters, FATs, Lines** form the fiber map.
+* **Offline map tiles** allow navigation even without internet.
+* Clicking an asset retrieves:
+
+  * power readings
+  * meter readings (Bluetooth)
+  * attached files
+  * job history
+  * connected assets
+* **Jobs** assign tasks to technicians.
+* **Daily Reports** summarize field work.
+* **GPS logs** calculate distance automatically.
+* **Asset update logs** track all map changes.
+* All assets (nodes, closures, splitters) support:
+
+  * live meter readings
+  * manual editing
+  * offline sync
+  * pop-up details
+
+---
+
+If you want, I can also generate:
+
+✅ **ERD Diagram (text-based)**
+✅ **Database Normalization (1NF – 3NF)**
+✅ **API endpoints to interact with this DB**
+✅ **Offline sync logic**
+Just tell me **“Next”**.
