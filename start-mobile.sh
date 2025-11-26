@@ -1,3 +1,4 @@
 #!/bin/bash
 cd /home/runner/workspace
-npx --yes expo@50 start --web --port 5000
+export EXPO_DEBUG=true
+npx expo start --web --port 5000
