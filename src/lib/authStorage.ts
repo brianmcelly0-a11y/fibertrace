@@ -12,13 +12,6 @@ const AUTH_KEY = 'fibertrace_user';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
-// Built-in test credentials for offline-first development
-const TEST_CREDENTIALS = [
-  { email: 'admin@fibertrace.app', password: 'admin123456', role: 'Admin', full_name: 'Admin User' },
-  { email: 'john@fibertrace.app', password: 'tech123456', role: 'Technician', full_name: 'John Technician' },
-  { email: 'jane@fibertrace.app', password: 'field123456', role: 'Technician', full_name: 'Jane Field' },
-];
-
 // Save user session
 export async function saveUser(user: User): Promise<void> {
   try {
@@ -57,29 +50,14 @@ export async function isLoggedIn(): Promise<boolean> {
 
 // Verify login credentials with retry logic and offline fallback
 export async function verifyCredentials(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
-  // First try test credentials (offline-first)
-  const testUser = TEST_CREDENTIALS.find(
-    t => t.email.toLowerCase() === email.toLowerCase() && t.password === password
-  );
-
-  if (testUser) {
-    const user: User = {
-      email: testUser.email,
-      role: testUser.role as any,
-      full_name: testUser.full_name,
-      technicianId: `tech-${Date.now()}`,
-    };
-    return { success: true, user };
-  }
-
-  // Try API with retry logic
   let lastError: string = '';
   
+  // Try API with retry logic
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://api.fibertrace.app/api';
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
       
-      const response = await fetch(`${apiUrl}/auth/login`, {
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -92,8 +70,9 @@ export async function verifyCredentials(email: string, password: string): Promis
       if (response.ok) {
         const data = await response.json();
         const user: User = {
+          id: data.user.id,
           email: data.user.email,
-          role: data.user.role || 'Technician',
+          role: (data.user.role || 'Technician') as any,
           full_name: data.user.full_name,
           technicianId: `tech-${data.user.id || Date.now()}`,
         };
@@ -102,10 +81,10 @@ export async function verifyCredentials(email: string, password: string): Promis
 
       // Handle specific error responses
       if (response.status === 401) {
-        return { success: false, error: 'Wrong Password' };
+        return { success: false, error: 'Invalid credentials' };
       }
       if (response.status === 404) {
-        return { success: false, error: 'Account Not Found' };
+        return { success: false, error: 'User not found' };
       }
 
       lastError = `Server error: ${response.status}`;
@@ -126,13 +105,6 @@ export async function verifyCredentials(email: string, password: string): Promis
     }
   }
 
-  // If all API attempts fail, check local storage as last resort
-  const storedUser = await getStoredUser();
-  if (storedUser && storedUser.email.toLowerCase() === email.toLowerCase()) {
-    // Allow offline login with previously stored credentials
-    return { success: true, user: storedUser };
-  }
-
   return { success: false, error: lastError || 'Login failed. Please check your credentials and try again.' };
 }
 
@@ -144,8 +116,8 @@ function delay(ms: number): Promise<void> {
 // Register new account
 export async function registerAccount(fullName: string, email: string, password: string): Promise<User> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://api.fibertrace.app/api';
-    const response = await fetch(`${apiUrl}/auth/register`, {
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
+    const response = await fetch(`${apiUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ full_name: fullName, email, password_hash: password }),
@@ -168,8 +140,8 @@ export async function registerAccount(fullName: string, email: string, password:
 // Reset password via API
 export async function resetPassword(email: string, newPassword: string): Promise<boolean> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://api.fibertrace.app/api';
-    const response = await fetch(`${apiUrl}/auth/password-reset`, {
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
+    const response = await fetch(`${apiUrl}/api/auth/password-reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, new_password_hash: newPassword }),

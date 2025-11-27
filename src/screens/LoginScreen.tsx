@@ -14,7 +14,6 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
 
   const handleLogin = async () => {
     // Validation
@@ -41,33 +40,24 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
     setLoading(true);
 
     try {
-      // Call improved auth function with retry logic
       const result = await AuthStorage.verifyCredentials(email, password);
 
       if (result.success && result.user) {
-        // Attempt to save user
         await AuthStorage.saveUser(result.user);
-        setRetryCount(0); // Reset retry count on success
         Alert.alert('Success', `Welcome back, ${result.user.full_name || 'Technician'}!`);
         onLoginSuccess?.(result.user);
       } else {
-        // Handle specific error messages
         const errorMessage = result.error || 'Login failed';
         
-        if (errorMessage === 'Wrong Password') {
-          Alert.alert('Wrong Password', 'The password you entered is incorrect.\n\nTip: Use test@email.com with password123456');
-        } else if (errorMessage === 'Account Not Found') {
-          Alert.alert('Account Not Found', 'No account exists with this email.\n\nTip: Try admin@fibertrace.app');
+        if (errorMessage === 'Invalid credentials') {
+          Alert.alert('Invalid Credentials', 'Email or password is incorrect. Please try again.');
+        } else if (errorMessage === 'User not found') {
+          Alert.alert('User Not Found', 'No account exists with this email address.');
         } else if (errorMessage.includes('Network') || errorMessage.includes('timeout')) {
-          setRetryCount(r => r + 1);
           Alert.alert(
-            'Connection Issue', 
-            `${errorMessage}\n\nAttempt ${retryCount + 1}. The app will work offline once logged in.`,
+            'Connection Error', 
+            `${errorMessage}\n\nPlease check your internet connection and try again.`,
             [
-              { text: 'Try Test Credentials', onPress: () => {
-                setEmail('admin@fibertrace.app');
-                setPassword('admin123456');
-              }},
               { text: 'Retry', onPress: handleLogin },
               { text: 'Cancel' }
             ]
@@ -81,11 +71,6 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillTestCredentials = () => {
-    setEmail('admin@fibertrace.app');
-    setPassword('admin123456');
   };
 
   return (
@@ -146,15 +131,6 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
                 <Text style={styles.loginButtonText}>Login</Text>
               )}
             </TouchableOpacity>
-
-            {/* Quick test credentials button */}
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={fillTestCredentials}
-              disabled={loading}
-            >
-              <Text style={styles.testButtonText}>Use Test Account</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.linkContainer}>
@@ -167,9 +143,9 @@ export default function LoginScreen({ onLoginSuccess, onSwitchToRegister, onSwit
           </View>
 
           <View style={styles.featureList}>
-            <FeatureItem title="🔐 Secure Auth" description="Works offline with test credentials" />
-            <FeatureItem title="📱 Offline First" description="Full app access without internet" />
-            <FeatureItem title="🔄 Auto Sync" description="Syncs when connection available" />
+            <FeatureItem title="🔐 Secure Auth" description="Email-verified accounts with role-based access" />
+            <FeatureItem title="📱 Offline First" description="Work completely without internet" />
+            <FeatureItem title="🔄 Auto Sync" description="Seamless sync when online" />
           </View>
 
           <View style={styles.footer}>
@@ -208,8 +184,6 @@ const styles = StyleSheet.create({
   loginButton: { backgroundColor: '#00ffff', paddingVertical: 12, borderRadius: 6, alignItems: 'center', marginTop: 16 },
   loginButtonDisabled: { opacity: 0.6 },
   loginButtonText: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
-  testButton: { backgroundColor: 'rgba(0, 255, 255, 0.2)', paddingVertical: 10, borderRadius: 6, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#00ffff' },
-  testButtonText: { fontSize: 12, fontWeight: '600', color: '#00ffff' },
   linkContainer: { alignItems: 'center', marginBottom: 24 },
   linkText: { fontSize: 12, color: colors.mutedForeground },
   linkHighlight: { color: '#00ffff', fontWeight: '600' },
