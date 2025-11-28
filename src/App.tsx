@@ -68,10 +68,16 @@ function AppContent() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLoginSuccess = React.useCallback(async (user: AuthStorage.User) => {
+  const handleLoginSuccess = React.useCallback(async (user: any) => {
     try {
-      await AuthStorage.saveUser(user);
-      // Ensure state updates after save completes
+      const validUser: AuthStorage.User = {
+        id: user.id,
+        email: user.email,
+        role: (user.role || 'Technician') as any,
+        full_name: user.full_name,
+        technicianId: user.technicianId,
+      };
+      await AuthStorage.saveUser(validUser);
       setIsLoggedIn(true);
     } catch (error) {
       console.error('Failed to save user:', error);

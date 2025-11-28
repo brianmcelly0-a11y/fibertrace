@@ -8,6 +8,19 @@ const { Pool } = pg;
 const app: Express = express();
 const PORT = process.env.PORT || 5001;
 
+// Extend Express Request type to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id?: number;
+        email?: string;
+        role?: string;
+      };
+    }
+  }
+}
+
 // PostgreSQL Connection Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/fibertrace',
