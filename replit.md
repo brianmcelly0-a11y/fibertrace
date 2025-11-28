@@ -7,16 +7,20 @@
 
 ### Current Status
 - ✅ **12/12 Modules** - All features implemented
-- ✅ **26/26 Screens** - Complete UI integration  
+- ✅ **5 Hub Screens** - Consolidated tabbed navigation  
 - ✅ **Real Backend** - PostgreSQL database with 15 tables
 - ✅ **Production Ready** - No test/mock data
 - ✅ **Offline-First** - Works without internet connection
 
 ### What Changed (Latest)
-1. ✅ **Removed test account button** - Login requires real credentials
-2. ✅ **Removed hardcoded test users** - All users from database
-3. ✅ **Real API integration** - Points to backend (http://localhost:5001)
-4. ✅ **Database-driven** - All data persisted in PostgreSQL
+1. ✅ **Hub Consolidation** - Reduced 26+ screens to 5 logical hubs
+2. ✅ **Tabbed Navigation** - MaterialTopTabNavigator within each hub
+3. ✅ **Data Persistence** - Fixed job timer, node/route persistence
+4. ✅ **Jobs Hub** - Combined Jobs List, Active Timer, Metrics tabs
+5. ✅ **Tools Hub** - Bluetooth, GPS, Performance, Sync tabs
+6. ✅ **Infrastructure Hub** - Nodes, Routes, Closures, Splices tabs
+7. ✅ **Reports Hub** - Analytics and Reports tabs
+8. ✅ **Settings Hub** - Profile, Notifications, Settings tabs
 
 ### Authentication Flow (Real)
 - Users stored in database
@@ -112,13 +116,21 @@ See `BACKEND_SETUP.md` for full details.
 ## 📁 Project Structure
 ```
 src/
-  ├── screens/          # 26 mobile UI screens
+  ├── screens/
+  │   ├── ToolsHubScreen.tsx    # Bluetooth, GPS, Performance, Sync
+  │   ├── InfrastructureHubScreen.tsx  # Nodes, Routes, Closures, Splices
+  │   ├── JobsHubScreen.tsx     # Jobs List, Active Timer, Metrics
+  │   ├── ReportsHubScreen.tsx  # Analytics, Reports
+  │   └── SettingsHubScreen.tsx # Profile, Notifications, Settings
   ├── lib/
   │   ├── authStorage.ts # Real API authentication
   │   ├── mapModule/     # 10 offline workflows
+  │   ├── jobManagement/ # Job tracking with timer state
+  │   ├── nodeManagement/ # Node CRUD with persistence
+  │   ├── routeManagement/ # Route persistence
   │   ├── closureManagement/
   │   ├── spliceManagement/
-  │   └── [9 more modules]
+  │   └── [5 more modules]
   └── theme/            # Cyan UI theme
 
 backend/
