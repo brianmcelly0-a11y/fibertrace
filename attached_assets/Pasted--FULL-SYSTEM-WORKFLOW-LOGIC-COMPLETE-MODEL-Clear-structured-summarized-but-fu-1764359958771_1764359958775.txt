@@ -1,0 +1,347 @@
+---
+
+# ⭐ **FULL SYSTEM WORKFLOW LOGIC (COMPLETE MODEL)**
+
+*(Clear, structured, summarized but fully detailed)*
+
+---
+
+# 🔵 **1. AUTHENTICATION WORKFLOW (LOGIN / REGISTER)**
+
+### **Login:**
+
+1. User enters phone/email + password
+2. Eye icon toggles password visibility
+3. System validates credentials
+4. If correct → home dashboard
+5. If wrong → error message
+
+### **Register:**
+
+1. User taps “Register”
+2. Enters name, role (tech/supervisor), phone, email, password
+3. System stores profile
+4. Auto login or back to login
+
+---
+
+# 🔵 **2. HOME DASHBOARD WORKFLOW**
+
+The dashboard shows quick-access shortcuts:
+
+* Map
+* Routes
+* Nodes
+* Closures (ATB/FAT/ODF/Dome/Inline etc)
+* Tools List
+* Jobs & Daily Reports
+* Power Monitoring
+* Inventory
+* Settings & Offline Sync
+
+User can navigate to any module from here.
+
+---
+
+# 🔵 **3. MAP WORKFLOW (CENTRAL MODULE)**
+
+This is the **heart** of the system. Everything is linked to map operations.
+
+### **3.1 Map Loading**
+
+* Loads **offline map tiles**
+* Loads saved routes, closures, nodes, poles, markers
+* Shows GPS location
+
+### **3.2 Adding Network Elements**
+
+User taps → “Add” → choose:
+
+* Route
+* Node / Pole
+* Closure (ATB, FAT, Dome, Inline, Patch Panel, DP, Splitter box)
+* Customer drop / ONT
+* Marker (custom)
+
+System opens form for details.
+
+### **3.3 Editing Elements**
+
+Tap any element → popup → Edit
+
+* Update location
+* Update status
+* Add distance
+* Add photo
+* Add power values
+* Add notes
+
+### **3.4 Route Drawing Workflow**
+
+1. User selects **Draw Route**
+2. Taps map to place points
+3. System auto-calculates distance per segment
+4. Route saved with name + color
+5. Nodes and closures can be mapped along the line
+
+### **3.5 Auto Distance Calculator**
+
+When placing two points:
+
+* System calculates fiber distance
+* Stores it as part of route
+* Updates route summary automatically
+
+---
+
+# 🔵 **4. ROUTE MANAGEMENT WORKFLOW**
+
+### **4.1 Route Creation**
+
+* Create route name
+* Draw path
+* Save length
+* Add cable type, cores, burial depth / pole numbers
+
+### **4.2 Route Linking**
+
+* Closures placed along route auto-link
+* Manual override allowed
+* Power propagation uses the route order
+
+### **4.3 Route Reporting**
+
+System generates:
+
+* Total length
+* Number of nodes
+* Number of closures
+* Power loss summary
+
+---
+
+# 🔵 **5. NODE / POLE MANAGEMENT WORKFLOW**
+
+Nodes include poles, handholes, mini-cabinets.
+
+### Steps:
+
+1. Add node by map or GPS
+2. Enter node type
+3. Assign to route
+4. Add power info (if applicable)
+5. Add attachments (closures, splitters, cables)
+
+Nodes can contain multiple entities.
+
+---
+
+# 🔵 **6. CLOSURE MANAGEMENT WORKFLOW**
+
+Closures include:
+
+* ATBs
+* FATs
+* Dome closures
+* Inline closures
+* Patch panels (ODFs)
+* Splitter boxes
+* Distribution Points
+
+### **6.1 Adding a Closure**
+
+1. User chooses type
+2. Places on map
+3. Fills details:
+
+   * Fiber count
+   * Splitters
+   * Cable entries
+   * Location type (pole/ground)
+   * Route
+   * Photos
+4. Save
+
+### **6.2 Closure Interaction**
+
+Tap → popup showing:
+
+* Power status
+* Splicing diagram
+* Connected routes
+* Condition
+* Maintenance history
+
+---
+
+# 🔵 **7. SPLICE MANAGEMENT WORKFLOW**
+
+User selects closure → “Add Splice”
+
+### Inputs:
+
+* Fiber In → Fiber Out
+* Color code
+* Tube number
+* Splicing type
+* Loss reading
+* Photos
+
+### System:
+
+* Builds a virtual splice map
+* Updates power chain
+* Highlights bad joints or high-loss fibers
+
+---
+
+# 🔵 **8. SPLITTER & POWER FLOW WORKFLOW**
+
+### **Splitter Mapping**
+
+User selects type (1×4, 1×8, 1×16 etc)
+
+System prompts:
+
+* Input fiber
+* Output branches
+* Customer or route assignments
+
+### **Power Propagation**
+
+System reads:
+
+* Input power
+* Splice losses
+* Splitter losses
+* Cable attenuation (per km)
+
+Then calculates:
+
+* Power at every closure
+* Power at every customer
+* Alerts if below threshold
+
+---
+
+# 🔵 **9. CUSTOMER DROP / ONT MANAGEMENT WORKFLOW**
+
+### Add Customer:
+
+1. Place marker
+2. Assign customer number
+3. Choose parent FAT or splitter
+4. Enter drop length
+5. Enter ONT power reading
+6. Save
+
+System updates:
+
+* FAT consumption
+* Splitter output load
+* Power chain
+
+---
+
+# 🔵 **10. JOB & MAINTENANCE WORKFLOW**
+
+### Daily Job Workflow:
+
+1. Technician opens job module
+2. Selects job type (fault repair / installation / maintenance)
+3. System starts job timer
+4. Technician logs:
+
+   * Route worked on
+   * Closures opened
+   * Splices done
+   * Power test results
+   * Photos
+5. Submit daily report
+
+### Supervisor View:
+
+* Approve / reject job
+* Add follow-up tasks
+* View history
+
+---
+
+# 🔵 **11. REPORTING ENGINE WORKFLOW**
+
+Auto-generated reports:
+
+### Technical Reports:
+
+* Route summary
+* Splicing summary
+* Closure inventory
+* Splitter mapping
+* Power chain health
+* Daily technician reports
+
+### Export Options:
+
+* PDF
+* CSV
+* Offline local storage
+
+---
+
+# 🔵 **12. INVENTORY & TOOLS WORKFLOW**
+
+Tracks all tools:
+
+* OTDR
+* Cleavers
+* Power Meters
+* Ladders
+* Safety gear
+* Closure kits
+* Drop cables
+* Splitters
+* ODF panels
+
+### Workflow:
+
+1. Add tool
+2. Assign to technician
+3. Update status (working/damaged/lost)
+4. Auto-log tool used during job
+5. Generate tool usage report
+
+---
+
+# 🔵 **13. OFFLINE SYNC ENGINE**
+
+Essential because technicians work in field areas without internet.
+
+### Offline Mode:
+
+* Map still works
+* Routes saved locally
+* Job logs saved locally
+* Closures saved locally
+* Power readings saved locally
+
+### When Online:
+
+* System syncs data
+* Merges server updates
+* Updates offline maps if needed
+
+---
+
+# 🔵 **14. SETTINGS & PERMISSIONS WORKFLOW**
+
+* Manage user roles
+* Technician limits
+* Supervisor controls
+* Sync settings
+* Data backup
+* Map updates
+* Theme & UI configurations
+
+---
+
+# ⭐ **THIS IS THE COMPLETE SYSTEM WORKFLOW LOGIC**

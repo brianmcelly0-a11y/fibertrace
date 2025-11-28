@@ -9,8 +9,6 @@ import { DashboardScreen } from './screens/DashboardScreen';
 import { CustomerScreen } from './screens/CustomerScreen';
 import JobsHubScreen from './screens/JobsHubScreen';
 import InventoryScreen from './screens/InventoryScreen';
-import ScheduleScreen from './screens/ScheduleScreen';
-import SearchScreen from './screens/SearchScreen';
 import ToolsHubScreen from './screens/ToolsHubScreen';
 import InfrastructureHubScreen from './screens/InfrastructureHubScreen';
 import ReportsHubScreen from './screens/ReportsHubScreen';
@@ -119,12 +117,9 @@ function AppContent() {
   const screens: Record<string, React.ComponentType<any>> = {
     Dashboard: DashboardScreen,
     Map: MapScreen,
-    Jobs: JobsHubScreen,
-    Inventory: InventoryScreen,
-    Schedule: ScheduleScreen,
-    Customers: CustomerScreen,
-    Search: SearchScreen,
     Infrastructure: InfrastructureHubScreen,
+    Customers: CustomerScreen,
+    Jobs: JobsHubScreen,
     Reports: ReportsHubScreen,
     Tools: ToolsHubScreen,
     Settings: () => <SettingsHubScreen onLogout={handleLogout} />,
