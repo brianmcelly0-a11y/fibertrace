@@ -1,41 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { colors } from '../theme/colors';
-import * as Analytics from '@/lib/analytics';
-import * as Reports from '@/lib/reportGeneration';
+import * as ReportingCharts from '@/lib/reportingCharts';
 
-type TabType = 'analytics' | 'reports';
+type TabType = 'analytics' | 'export';
 
-const MOCK_JOBS: any[] = Array.from({ length: 25 }, (_, i) => ({
-  id: `j${i}`,
+const MOCK_JOBS: any[] = Array.from({ length: 30 }, (_, i) => ({
   jobId: `JOB-${String(i + 1).padStart(3, '0')}`,
-  name: `Job ${i + 1}`,
-  description: 'Installation and testing work',
   status: ['Completed', 'In Progress', 'Pending'][Math.floor(Math.random() * 3)],
   duration: Math.floor(Math.random() * 14400) + 3600,
-  estimatedCost: Math.floor(Math.random() * 2000) + 500,
-  actualCost: Math.floor(Math.random() * 2200) + 450,
   assignedTechnician: ['John Doe', 'Jane Smith', 'Mike Johnson'][Math.floor(Math.random() * 3)],
 }));
-
-const MOCK_TECHNICIANS = [
-  { id: 't1', name: 'John Doe', role: 'Technician', currentUtilization: 75 },
-  { id: 't2', name: 'Jane Smith', role: 'Technician', currentUtilization: 65 },
-  { id: 't3', name: 'Mike Johnson', role: 'Team Lead', currentUtilization: 85 },
-];
-
-const MOCK_INVENTORY = [
-  { id: 'inv1', name: 'SMF Cable', currentStock: 450, minimumStock: 100, costPerUnit: 125 },
-  { id: 'inv2', name: 'Splitters', currentStock: 85, minimumStock: 20, costPerUnit: 450 },
-  { id: 'inv3', name: 'Connectors', currentStock: 1200, minimumStock: 200, costPerUnit: 12 },
-];
 
 export default function ReportsHubScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('analytics');
 
   const tabs: { key: TabType; label: string; icon: string }[] = [
     { key: 'analytics', label: 'Analytics', icon: '📊' },
-    { key: 'reports', label: 'Reports', icon: '📄' },
+    { key: 'export', label: 'Export', icon: '📥' },
   ];
 
   return (
@@ -57,28 +39,24 @@ export default function ReportsHubScreen() {
 
       <View style={styles.content}>
         {activeTab === 'analytics' && <AnalyticsTab />}
-        {activeTab === 'reports' && <ReportsTab />}
+        {activeTab === 'export' && <ExportTab />}
       </View>
     </View>
   );
 }
 
 function AnalyticsTab() {
-  const [period, setPeriod] = useState('Monthly');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadAnalytics();
-  }, [period]);
+  }, []);
 
   const loadAnalytics = async () => {
     setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-    } finally {
-      setLoading(false);
-    }
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setLoading(false);
   };
 
   const onRefresh = async () => {
@@ -87,9 +65,10 @@ function AnalyticsTab() {
     setRefreshing(false);
   };
 
-  const report = Analytics.generateAnalyticsReport(MOCK_JOBS, period);
-  const metrics = Analytics.getPerformanceMetrics(MOCK_JOBS);
-  const costBreakdown = Analytics.getCostBreakdown(MOCK_JOBS);
+  const metrics = ReportingCharts.getJobMetrics(MOCK_JOBS);
+  const pieData = ReportingCharts.generatePieChartData(MOCK_JOBS);
+  const waveData = ReportingCharts.generateWaveChartData(MOCK_JOBS);
+  const techPerf = ReportingCharts.getTechnicianPerformance(MOCK_JOBS);
 
   if (loading) {
     return (
@@ -102,77 +81,69 @@ function AnalyticsTab() {
 
   return (
     <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-      <View style={styles.periodSelector}>
-        {['Daily', 'Weekly', 'Monthly', 'Yearly'].map(p => (
-          <TouchableOpacity
-            key={p}
-            style={[styles.periodButton, period === p && styles.periodButtonActive]}
-            onPress={() => setPeriod(p)}
-          >
-            <Text style={[styles.periodButtonText, period === p && styles.periodButtonTextActive]}>{p}</Text>
-          </TouchableOpacity>
+      <View style={styles.metricsGrid}>
+        <MetricBox label="Completed" value={String(metrics.jobsCompleted)} color={colors.chart.green} />
+        <MetricBox label="In Progress" value={String(metrics.jobsInProgress)} color={colors.primary} />
+        <MetricBox label="Avg Time" value={`${(metrics.averageCompletionTime / 3600).toFixed(1)}h`} color={colors.chart.amber} />
+        <MetricBox label="Total Hours" value={metrics.totalHoursLogged.toFixed(0)} color={colors.chart.cyan} />
+      </View>
+
+      <Text style={styles.sectionTitle}>Job Distribution (Pie Chart)</Text>
+      <View style={styles.chartContainer}>
+        {pieData.map((item, idx) => (
+          <View key={idx} style={styles.pieItem}>
+            <View style={[styles.pieColor, { backgroundColor: item.color }]} />
+            <Text style={styles.pieLabel}>{item.label}: {item.value}</Text>
+          </View>
         ))}
       </View>
 
-      <View style={styles.metricsGrid}>
-        <MetricBox label="Jobs Completed" value={String(report.jobsCompleted)} color={colors.chart.green} />
-        <MetricBox label="Avg Completion" value={`${(report.averageCompletionTime / 60).toFixed(1)}h`} color={colors.primary} />
-        <MetricBox label="Cost Per Job" value={`$${report.costPerJob.toFixed(0)}`} color={colors.chart.amber} />
-        <MetricBox label="Profit Margin" value={`${report.profitMargin}%`} color={colors.chart.green} />
+      <Text style={styles.sectionTitle}>Performance Trend (Wave Chart)</Text>
+      <View style={styles.waveChart}>
+        {waveData.map((point, idx) => (
+          <View key={idx} style={[styles.waveBar, { height: (point.value / 100) * 100 + 20 }]} />
+        ))}
       </View>
 
-      <Text style={styles.sectionTitle}>Performance</Text>
-      {metrics.map((metric, idx) => (
-        <View key={idx} style={styles.metricRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.metricName}>{metric.metric}</Text>
-            <Text style={styles.metricSubtext}>Target: {metric.target}%</Text>
+      <Text style={styles.sectionTitle}>Technician Performance</Text>
+      {techPerf.map((tech, idx) => (
+        <View key={idx} style={styles.techCard}>
+          <View style={styles.techHeader}>
+            <Text style={styles.techName}>{tech.name}</Text>
+            <Text style={styles.techRate}>{tech.completionRate}%</Text>
           </View>
-          <View style={styles.metricBar}>
-            <View style={[styles.metricBarFill, { width: `${Math.min(metric.value, 100)}%`, backgroundColor: metric.status === 'On Target' ? colors.chart.green : metric.status === 'Below Target' ? colors.destructive : colors.chart.amber }]} />
+          <View style={styles.techStats}>
+            <Text style={styles.techStat}>Jobs: {tech.totalJobs}</Text>
+            <Text style={styles.techStat}>Hours: {tech.hoursLogged}</Text>
           </View>
-          <Text style={styles.metricValue}>{metric.value.toFixed(0)}%</Text>
         </View>
       ))}
-
-      <Text style={styles.sectionTitle}>Cost Breakdown</Text>
-      <View style={styles.costContainer}>
-        {costBreakdown.map((item, idx) => (
-          <View key={idx} style={styles.costItem}>
-            <Text style={styles.costLabel}>{item.category}</Text>
-            <Text style={styles.costAmount}>${item.amount.toFixed(0)}</Text>
-            <View style={styles.costBar}>
-              <View style={[styles.costBarFill, { width: `${item.percentage}%`, backgroundColor: [colors.primary, colors.chart.green, colors.chart.amber][idx] }]} />
-            </View>
-            <Text style={styles.costPercent}>{item.percentage}%</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Revenue Summary</Text>
-        <SummaryRow label="Total Revenue" value={`$${report.totalRevenue.toFixed(0)}`} />
-        <SummaryRow label="Material Cost" value={`$${report.materialCost.toFixed(0)}`} />
-        <SummaryRow label="Labor Cost" value={`$${report.laborCost.toFixed(0)}`} />
-        <View style={styles.divider} />
-        <SummaryRow label="Net Profit" value={`$${(report.totalRevenue * report.profitMargin / 100).toFixed(0)}`} highlight />
-      </View>
     </ScrollView>
   );
 }
 
-function ReportsTab() {
-  const [selectedReport, setSelectedReport] = useState<Reports.ReportType>('JobCompletion');
-  const [selectedFormat, setSelectedFormat] = useState<Reports.ReportFormat>('PDF');
+function ExportTab() {
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [generatedReport, setGeneratedReport] = useState<Reports.ReportData | null>(null);
 
-  const generateReport = async (type: Reports.ReportType) => {
+  const handleExportCSV = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      let report: Reports.ReportData;
+      const csv = ReportingCharts.exportDataToCSV(MOCK_JOBS, 'jobs-report');
+      Alert.alert('✓ Export Successful', `CSV generated with ${csv.split('\n').length} rows ready for download`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setLoading(true);
+    try {
+      const pdf = ReportingCharts.formatDataForPDF(MOCK_JOBS, ReportingCharts.getJobMetrics(MOCK_JOBS));
+      Alert.alert('✓ PDF Generated', pdf.substring(0, 150) + '...\n\nPDF report ready for download');
+    } finally {
+      setLoading(false);
+    }
+  };
       
       if (type === 'JobCompletion') {
         report = Reports.generateJobCompletionReport(MOCK_JOBS, 'Monthly');
