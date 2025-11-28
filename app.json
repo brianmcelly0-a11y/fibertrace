@@ -16,36 +16,21 @@
       "**/*"
     ],
     "plugins": [
-      [
-        "expo-font"
-      ],
-      [
-        "expo-splash-screen"
-      ]
+      ["expo-font"],
+      ["expo-splash-screen"]
     ],
     "ios": {
-      "supportsTabletMode": true,
       "bundleIdentifier": "com.fibertrace.app",
       "buildNumber": "1",
       "infoPlist": {
         "NSLocalNetworkUsageDescription": "FiberTrace needs local network access for offline operations",
-        "NSBonjourServiceTypes": [
-          "_fibertrace._tcp"
-        ]
+        "NSBonjourServiceTypes": ["_fibertrace._tcp"]
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./public/assets/fiber-bg.png",
-        "backgroundColor": "#0a1628"
-      },
       "package": "com.fibertrace.app",
       "versionCode": 1,
-      "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "INTERNET"
-      ]
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "INTERNET"]
     },
     "web": {
       "favicon": "./public/assets/fiber-bg.png"
