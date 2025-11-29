@@ -6,7 +6,6 @@
     "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "icon": "./public/assets/fiber-bg.png",
     "splash": {
       "image": "./public/assets/fiber-bg.png",
       "resizeMode": "cover",
@@ -18,7 +17,6 @@
     "ios": {
       "bundleIdentifier": "com.fibertrace.app",
       "buildNumber": "1",
-      "supportsTabletMode": true,
       "infoPlist": {
         "NSLocalNetworkUsageDescription": "FiberTrace needs local network access for offline operations",
         "NSBonjourServiceTypes": ["_fibertrace._tcp"]
@@ -27,7 +25,6 @@
     "android": {
       "package": "com.fibertrace.app",
       "versionCode": 1,
-      "icon": "./public/assets/fiber-bg.png",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
