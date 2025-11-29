@@ -517,10 +517,18 @@ app.put('/api/users/:userId/settings', async (req: Request, res: Response) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ FiberTrace Backend running on port ${PORT}`);
-  console.log(`📱 API Base: http://localhost:${PORT}`);
-  console.log(`🔌 Database: PostgreSQL (connected)`);
-  console.log(`📊 API Endpoints Ready - PostgreSQL Integration Active`);
+
+// ============ USER PROFILE UPDATE ============
+app.put('/api/users/:userId/profile', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { full_name, phone } = req.body;
+    await pool.query(
+      'UPDATE users SET full_name = $1, phone = $2 WHERE id = $3',
+      [full_name, phone, userId]
+    );
+    res.json({ success: true, message: 'Profile updated' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });

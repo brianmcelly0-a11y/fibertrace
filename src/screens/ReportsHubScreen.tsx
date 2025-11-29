@@ -118,12 +118,16 @@ export default function ReportsHubScreen() {
 
         {selectedReport === 'splice' && (
           <View style={styles.reportData}>
-            {MOCK_SPLICE_DATA.map((splice, idx) => (
-              <View key={idx} style={styles.dataRow}>
-                <Text style={styles.dataLabel}>{splice.closure}</Text>
-                <Text style={styles.dataValue}>{splice.fibers}f • Avg: {splice.avgLoss}dB • Max: {splice.maxLoss}dB</Text>
-              </View>
-            ))}
+            {meterReadings.length === 0 ? (
+              <Text style={styles.emptyText}>No splice data found</Text>
+            ) : (
+              meterReadings.slice(0, 5).map((reading: any, idx: number) => (
+                <View key={idx} style={styles.dataRow}>
+                  <Text style={styles.dataLabel}>{reading.device_name}</Text>
+                  <Text style={styles.dataValue}>{reading.reading_value.toFixed(2)} {reading.unit}</Text>
+                </View>
+              ))
+            )}
           </View>
         )}
 
@@ -168,12 +172,16 @@ export default function ReportsHubScreen() {
 
         {selectedReport === 'power' && (
           <View style={styles.reportData}>
-            {MOCK_POWER.map((power, idx) => (
-              <View key={idx} style={styles.dataRow}>
-                <Text style={styles.dataLabel}>{power.node}</Text>
-                <Text style={styles.dataValue}>In: {power.powerIn}dBm • Out: {power.powerOut}dBm • Loss: {power.loss}dB</Text>
-              </View>
-            ))}
+            {powerReadings.length === 0 ? (
+              <Text style={styles.emptyText}>No power readings found</Text>
+            ) : (
+              powerReadings.slice(0, 5).map((reading: any, idx: number) => (
+                <View key={idx} style={styles.dataRow}>
+                  <Text style={styles.dataLabel}>Power Reading #{idx + 1}</Text>
+                  <Text style={styles.dataValue}>{reading.power_dbm?.toFixed(1) || 'N/A'} dBm</Text>
+                </View>
+              ))
+            )}
           </View>
         )}
 
