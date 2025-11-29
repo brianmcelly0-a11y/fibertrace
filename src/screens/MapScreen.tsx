@@ -94,6 +94,7 @@ export function MapScreen() {
   // ===== WORKFLOW 2: MAP DATA OVERLAY =====
   const [allNodes, setAllNodes] = useState<MapModule.MapNode[]>([]);
   const [fiberLines, setFiberLines] = useState<MapModule.FiberLine[]>([]);
+  const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [layerVisibility, setLayerVisibilityState] = useState<MapModule.MapLayerVisibility>({
     olts: true,
     splitters: true,
@@ -106,6 +107,26 @@ export function MapScreen() {
     inventory: false,
     issues: true,
   });
+
+  const toggleLayer = (layer: keyof MapModule.MapLayerVisibility) => {
+    setLayerVisibilityState(prev => ({
+      ...prev,
+      [layer]: !prev[layer]
+    }));
+  };
+
+  // Filter nodes based on layer visibility
+  const getVisibleNodes = () => {
+    return allNodes.filter(node => {
+      const nodeType = node.type.toLowerCase();
+      if (nodeType.includes('olt')) return layerVisibility.olts;
+      if (nodeType.includes('splitter')) return layerVisibility.splitters;
+      if (nodeType.includes('fat')) return layerVisibility.fats;
+      if (nodeType.includes('atb')) return layerVisibility.atbs;
+      if (nodeType.includes('closure')) return layerVisibility.closures;
+      return true;
+    });
+  };
 
   useEffect(() => {
     (async () => {
@@ -354,7 +375,23 @@ export function MapScreen() {
         region={region}
         onRegionChange={setRegion}
       >
-        {allNodes.map((node) => {
+        {/* FIBER LINES OVERLAY */}
+        {layerVisibility.fiberLines && fiberLines.map((line) => (
+          // @ts-ignore - Mobile-only component
+          <Polyline
+            key={`line-${line.id}`}
+            coordinates={[
+              { latitude: line.startLat, longitude: line.startLng },
+              { latitude: line.endLat, longitude: line.endLng }
+            ]}
+            strokeColor="#3B82F6"
+            strokeWidth={2}
+            lineDashPattern={[5, 5]}
+          />
+        ))}
+
+        {/* NODE MARKERS OVERLAY */}
+        {getVisibleNodes().map((node) => {
           // @ts-ignore - Mobile-only component
           return (
             <Marker
@@ -367,6 +404,7 @@ export function MapScreen() {
           );
         })}
 
+        {/* CURRENT LOCATION MARKER */}
         {currentLocation && (
           // @ts-ignore - Mobile-only component
           <Marker
@@ -376,6 +414,7 @@ export function MapScreen() {
           />
         )}
 
+        {/* GPS TRACE OVERLAY */}
         {gpsPath.length > 1 && (
           // @ts-ignore - Mobile-only component
           <Polyline
@@ -446,10 +485,17 @@ export function MapScreen() {
           >
             <Text style={styles.buttonText}>Cache</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primary, flex: 1, marginLeft: 8 }]}
+            onPress={() => setShowLayerPanel(true)}
+          >
+            <Text style={styles.buttonText}>Layers</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.statsText}>
-          Nodes: {allNodes.length} | Lines: {fiberLines.length} | Pending: {pendingActions}
+          Visible: {getVisibleNodes().length} | Lines: {layerVisibility.fiberLines ? fiberLines.length : 0} | Pending: {pendingActions}
         </Text>
         {offlineMapStatus && (
           <Text style={styles.statsText}>
@@ -554,6 +600,36 @@ export function MapScreen() {
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* LAYER VISIBILITY PANEL */}
+      <Modal visible={showLayerPanel} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Map Layers</Text>
+
+            <ScrollView style={{ maxHeight: '70%' }}>
+              {Object.entries(layerVisibility).map(([layer, visible]) => (
+                <TouchableOpacity
+                  key={layer}
+                  style={[styles.layerToggle, { backgroundColor: visible ? colors.primary : colors.card }]}
+                  onPress={() => toggleLayer(layer as keyof MapModule.MapLayerVisibility)}
+                >
+                  <Text style={styles.layerText}>
+                    {visible ? '✓ ' : '○ '}{layer.charAt(0).toUpperCase() + layer.slice(1).replace(/([A-Z])/g, ' $1')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.mutedForeground, marginTop: 12 }]}
+              onPress={() => setShowLayerPanel(false)}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -777,5 +853,17 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  layerToggle: {
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  layerText: {
+    color: colors.foreground,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
