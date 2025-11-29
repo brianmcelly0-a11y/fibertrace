@@ -297,6 +297,39 @@ function AppContent() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+
+            {/* Logout Button at Bottom */}
+            <View style={{
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              paddingHorizontal: 12,
+              paddingVertical: 16,
+              marginTop: 'auto',
+            }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setMenuOpen(false);
+                  handleLogout();
+                }}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: colors.destructive + '20',
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 8,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: colors.destructive,
+                  letterSpacing: 0.3,
+                }}>
+                  🚪 Logout
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
