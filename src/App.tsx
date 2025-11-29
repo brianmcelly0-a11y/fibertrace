@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
@@ -16,6 +16,7 @@ import SettingsHubScreen from './screens/SettingsHubScreen';
 import { colors } from './theme/colors';
 import { initializeOfflineStorage } from './lib/offlineStorage';
 import * as AuthStorage from './lib/authStorage';
+import * as Permissions from './lib/permissions';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 const queryClient = new QueryClient({
@@ -37,6 +38,7 @@ function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [authScreen, setAuthScreen] = React.useState<'login' | 'register' | 'recovery'>('login');
+  const [showPermissionsPrompt, setShowPermissionsPrompt] = React.useState(false);
 
   useEffect(() => {
     initializeOfflineStorage().catch(error => {
@@ -79,10 +81,36 @@ function AppContent() {
       };
       await AuthStorage.saveUser(validUser);
       setIsLoggedIn(true);
+      setShowPermissionsPrompt(true); // Show permissions after login
     } catch (error) {
       console.error('Failed to save user:', error);
     }
   }, []);
+
+  const requestAppPermissions = async () => {
+    try {
+      const locationGranted = await Permissions.requestLocationPermission();
+      if (locationGranted) {
+        await Permissions.savePermissionPreference('location', true);
+      }
+      
+      const bluetoothGranted = await Permissions.requestBluetoothPermission();
+      if (bluetoothGranted) {
+        await Permissions.savePermissionPreference('bluetooth', true);
+      }
+      
+      setShowPermissionsPrompt(false);
+      
+      if (locationGranted && bluetoothGranted) {
+        Alert.alert('✓ Permissions Granted', 'GPS and Bluetooth enabled for full functionality');
+      } else {
+        Alert.alert('⚠️ Limited Permissions', 'Some features may not work without GPS and Bluetooth access');
+      }
+    } catch (error) {
+      console.error('Permission request error:', error);
+      setShowPermissionsPrompt(false);
+    }
+  };
 
   const handleLogout = async () => {
     await AuthStorage.clearUser();
@@ -90,6 +118,82 @@ function AppContent() {
     setActiveTab('Dashboard');
     setAuthScreen('login');
   };
+
+  // Show permissions prompt after login
+  if (showPermissionsPrompt) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
+        <View style={{
+          backgroundColor: colors.card,
+          borderRadius: 16,
+          padding: 24,
+          alignItems: 'center',
+          borderWidth: 2,
+          borderColor: colors.primary,
+        }}>
+          <Text style={{ fontSize: 28, marginBottom: 16 }}>📍📶</Text>
+          <Text style={{
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: colors.foreground,
+            marginBottom: 8,
+            textAlign: 'center',
+          }}>
+            Enable Permissions
+          </Text>
+          <Text style={{
+            fontSize: 13,
+            color: colors.mutedForeground,
+            marginBottom: 16,
+            textAlign: 'center',
+            lineHeight: 20,
+          }}>
+            FiberTrace needs GPS for location tracking and Bluetooth for connecting to meters and testing equipment.
+          </Text>
+          <TouchableOpacity
+            onPress={requestAppPermissions}
+            style={{
+              backgroundColor: colors.primary,
+              paddingVertical: 12,
+              paddingHorizontal: 32,
+              borderRadius: 8,
+              marginBottom: 8,
+              width: '100%',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: colors.background, fontWeight: '600', fontSize: 14 }}>
+              ✓ Grant Permissions
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowPermissionsPrompt(false)}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 32,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: colors.border,
+              width: '100%',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: colors.foreground, fontWeight: '500', fontSize: 14 }}>
+              Skip for Now
+            </Text>
+          </TouchableOpacity>
+          <Text style={{
+            fontSize: 11,
+            color: colors.mutedForeground,
+            marginTop: 12,
+            textAlign: 'center',
+          }}>
+            You can enable these later in Settings
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   // Show auth screens if not logged in
   if (!isLoggedIn && !loading) {
