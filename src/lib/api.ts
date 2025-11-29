@@ -187,4 +187,49 @@ export const api = {
     if (!res.ok) throw new Error('Failed to create FAT port');
     return res.json();
   },
+
+  // ===== USER SETTINGS =====
+  async getUserSettings(userId: number) {
+    const res = await fetch(`${API_BASE}/api/users/${userId}/settings`);
+    if (!res.ok) throw new Error('Failed to fetch user settings');
+    return res.json();
+  },
+
+  async updateUserSettings(userId: number, settings: any) {
+    const res = await fetch(`${API_BASE}/api/users/${userId}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+    if (!res.ok) throw new Error('Failed to update user settings');
+    return res.json();
+  },
+
+  // ===== METER READINGS (Bluetooth Integration) =====
+  async getMeterReadings() {
+    const res = await fetch(`${API_BASE}/api/meter-readings`);
+    if (!res.ok) throw new Error('Failed to fetch meter readings');
+    return res.json();
+  },
+
+  async saveMeterReading(data: any) {
+    const res = await fetch(`${API_BASE}/api/meter-readings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to save meter reading');
+    return res.json();
+  },
+
+  // ===== GPS LOGS =====
+  async saveGpsLog(data: any) {
+    const res = await fetch(`${API_BASE}/api/gps-logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to save GPS log');
+    return res.json();
+  },
 };

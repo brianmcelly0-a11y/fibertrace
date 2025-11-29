@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, Platform } from 'react-native';
 import { colors } from '../theme/colors';
 import * as Notifications from '@/lib/pushNotifications';
 import * as AuthStorage from '../lib/authStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '../lib/api';
+import * as Permissions from '../lib/permissions';
 
 type TabType = 'settings' | 'profile' | 'notifications';
 
@@ -51,14 +53,78 @@ function SettingsTab() {
   const [autoSync, setAutoSync] = useState(true);
   const [gpsAlways, setGpsAlways] = useState(false);
   const [dataLimit, setDataLimit] = useState(false);
+  const [bluetoothEnabled, setBluetoothEnabled] = useState(false);
+  const [syncFrequency, setSyncFrequency] = useState('30');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const settings = await AsyncStorage.multiGet([
+        'setting_darkMode',
+        'setting_autoSync',
+        'setting_gpsAlways',
+        'setting_dataLimit',
+        'setting_bluetoothEnabled',
+        'setting_syncFrequency',
+      ]);
+      
+      settings.forEach(([key, value]) => {
+        if (value) {
+          const parsedValue = JSON.parse(value);
+          if (key === 'setting_darkMode') setDarkMode(parsedValue);
+          if (key === 'setting_autoSync') setAutoSync(parsedValue);
+          if (key === 'setting_gpsAlways') setGpsAlways(parsedValue);
+          if (key === 'setting_dataLimit') setDataLimit(parsedValue);
+          if (key === 'setting_bluetoothEnabled') setBluetoothEnabled(parsedValue);
+          if (key === 'setting_syncFrequency') setSyncFrequency(parsedValue);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  };
 
   const handleToggle = async (key: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
     try {
       await AsyncStorage.setItem(`setting_${key}`, JSON.stringify(value));
+      
+      // Save to backend
+      const user = await AuthStorage.getStoredUser();
+      if (user?.id) {
+        await api.updateUserSettings(user.id, { [key]: value }).catch(e => console.warn('Backend sync failed:', e));
+      }
     } catch (error) {
       console.error('Failed to save setting:', error);
     }
+  };
+
+  const handleBluetoothToggle = async (value: boolean) => {
+    if (value) {
+      const granted = await Permissions.requestBluetoothPermission();
+      if (!granted) {
+        Alert.alert('Permission Denied', 'Bluetooth permission is required');
+        return;
+      }
+      await Permissions.savePermissionPreference('bluetooth', true);
+    }
+    await handleToggle('bluetoothEnabled', value, setBluetoothEnabled);
+  };
+
+  const handleGpsAlwaysToggle = async (value: boolean) => {
+    if (value) {
+      const granted = await Permissions.requestLocationPermission();
+      if (!granted) {
+        Alert.alert('Permission Denied', 'Location permission is required');
+        return;
+      }
+      await Permissions.savePermissionPreference('location', true);
+    }
+    await handleToggle('gpsAlways', value, setGpsAlways);
   };
 
   const handleClearCache = async () => {
@@ -116,8 +182,37 @@ function SettingsTab() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Data & Sync</Text>
         <SettingRow label="Auto Sync" value={autoSync} onToggle={v => handleToggle('autoSync', v, setAutoSync)} />
-        <SettingRow label="Always-On GPS" value={gpsAlways} onToggle={v => handleToggle('gpsAlways', v, setGpsAlways)} />
+        <SettingRow 
+          label="Always-On GPS" 
+          value={gpsAlways} 
+          onToggle={handleGpsAlwaysToggle}
+          subtitle="Requires location permission"
+        />
         <SettingRow label="Data Saver Mode" value={dataLimit} onToggle={v => handleToggle('dataLimit', v, setDataLimit)} />
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Sync Frequency (minutes)</Text>
+          <View style={styles.frequencyOptions}>
+            {['5', '15', '30', '60'].map(freq => (
+              <TouchableOpacity
+                key={freq}
+                onPress={() => setSyncFrequency(freq)}
+                style={[styles.freqButton, syncFrequency === freq && styles.freqButtonActive]}
+              >
+                <Text style={[styles.freqText, syncFrequency === freq && styles.freqTextActive]}>{freq}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Hardware & Connectivity</Text>
+        <SettingRow 
+          label="Bluetooth Devices" 
+          value={bluetoothEnabled} 
+          onToggle={handleBluetoothToggle}
+          subtitle="Connect OTDR/Power meters"
+        />
       </View>
 
       <View style={styles.section}>
