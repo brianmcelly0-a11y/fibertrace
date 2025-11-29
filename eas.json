@@ -5,13 +5,10 @@
   "build": {
     "production": {
       "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:bundleRelease"
+        "buildType": "apk"
       },
       "env": {
-        "npm_config_legacy_peer_deps": "true",
-        "ORG_GRADLE_PROJECT_org_gradle_java_home": "",
-        "GRADLE_OPTS": "-Dorg.gradle.jvmargs=-Xlint:-deprecation"
+        "npm_config_legacy_peer_deps": "true"
       }
     },
     "preview": {
@@ -19,8 +16,7 @@
         "buildType": "apk"
       },
       "env": {
-        "npm_config_legacy_peer_deps": "true",
-        "GRADLE_OPTS": "-Dorg.gradle.jvmargs=-Xlint:-deprecation"
+        "npm_config_legacy_peer_deps": "true"
       }
     }
   }
