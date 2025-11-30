@@ -1,22 +1,47 @@
 // API client for mobile app - connects to real backend
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+
+let authToken: string | null = null;
+
+async function getAuthHeader() {
+  if (!authToken) {
+    authToken = await AsyncStorage.getItem('auth_token');
+  }
+  return authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+}
+
+export async function setAuthToken(token: string) {
+  authToken = token;
+  await AsyncStorage.setItem('auth_token', token);
+}
+
+export async function clearAuthToken() {
+  authToken = null;
+  await AsyncStorage.removeItem('auth_token');
+}
 
 export const api = {
   // ===== AUTHENTICATION =====
-  async login(email: string, password_hash: string) {
+  async login(email: string, password: string) {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password_hash }),
+      body: JSON.stringify({ email, password }),
     });
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: 'Login failed' }));
       throw new Error(error.error || 'Login failed');
     }
-    return res.json();
+    const data = await res.json();
+    if (data.token) {
+      await setAuthToken(data.token);
+    }
+    return data;
   },
 
-  async register(data: { full_name: string; email: string; phone?: string; password_hash: string; role?: string }) {
+  async register(data: { full_name: string; email: string; phone?: string; password: string; role?: string }) {
     const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -26,6 +51,20 @@ export const api = {
       const error = await res.json().catch(() => ({ error: 'Registration failed' }));
       throw new Error(error.error || 'Registration failed');
     }
+    const result = await res.json();
+    if (result.token) {
+      await setAuthToken(result.token);
+    }
+    return result;
+  },
+
+  async getMe() {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', ...headers },
+    });
+    if (!res.ok) throw new Error('Failed to fetch user');
     return res.json();
   },
 

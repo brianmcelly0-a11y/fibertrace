@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import pg from 'pg';
+import { hashPassword, verifyPassword, generateToken, authMiddleware, AuthRequest } from './auth.js';
 
 const { Pool } = pg;
 const app: Express = express();
@@ -311,12 +312,26 @@ app.get('/health', (req: Request, res: Response) => {
 // ============ AUTH ENDPOINTS ============
 app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
-    const { full_name, email, phone, password_hash, role } = req.body;
+    const { full_name, email, phone, password, role } = req.body;
+    
+    if (!full_name || !email || !password) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const hashedPassword = await hashPassword(password);
     const result = await pool.query(
       'INSERT INTO users (full_name, email, phone, password_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, full_name, phone, role',
-      [full_name, email, phone, password_hash, role || 'technician']
+      [full_name, email, phone || null, hashedPassword, role || 'technician']
     );
-    res.json({ success: true, user: result.rows[0] });
+    
+    const user = result.rows[0];
+    const token = generateToken(user.id, user.email, user.role);
+    
+    res.status(201).json({ 
+      success: true, 
+      user,
+      token 
+    });
   } catch (error: any) {
     if (error.code === '23505') {
       return res.status(409).json({ error: 'Email already registered' });
@@ -327,16 +342,65 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
 
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
-    const { email, password_hash } = req.body;
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
     const result = await pool.query(
-      'SELECT id, email, full_name, phone, role, settings FROM users WHERE email = $1 AND password_hash = $2',
-      [email, password_hash]
+      'SELECT id, email, full_name, phone, role, settings, password_hash FROM users WHERE email = $1',
+      [email]
     );
+    
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [result.rows[0].id]);
-    res.json({ success: true, user: result.rows[0] });
+
+    const user = result.rows[0];
+    const passwordMatch = await verifyPassword(password, user.password_hash);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
+    
+    const token = generateToken(user.id, user.email, user.role);
+    
+    res.json({ 
+      success: true, 
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        phone: user.phone,
+        role: user.role,
+        settings: user.settings
+      },
+      token 
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/auth/me', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const result = await pool.query(
+      'SELECT id, email, full_name, phone, role, settings, created_at, last_login FROM users WHERE id = $1',
+      [req.user.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ user: result.rows[0] });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -49,14 +49,14 @@ export async function isLoggedIn(): Promise<boolean> {
   return !!user;
 }
 
-// Verify login credentials with retry logic and offline fallback
+// Verify login credentials with retry logic and JWT token handling
 export async function verifyCredentials(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
   let lastError: string = '';
   
   // Try API with retry logic
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
       
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
@@ -64,12 +64,16 @@ export async function verifyCredentials(email: string, password: string): Promis
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ email, password_hash: password }),
+        body: JSON.stringify({ email, password }),
         signal: AbortSignal.timeout(5000), // 5 second timeout
       });
 
       if (response.ok) {
         const data = await response.json();
+        // Store JWT token for future requests
+        if (data.token) {
+          await AsyncStorage.setItem('auth_token', data.token);
+        }
         const user: User = {
           id: data.user.id,
           email: data.user.email,
@@ -117,11 +121,11 @@ function delay(ms: number): Promise<void> {
 // Register new account
 export async function registerAccount(fullName: string, email: string, password: string): Promise<User> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
     const response = await fetch(`${apiUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ full_name: fullName, email, password_hash: password }),
+      body: JSON.stringify({ full_name: fullName, email, password }),
       signal: AbortSignal.timeout(5000),
     });
 
@@ -131,6 +135,10 @@ export async function registerAccount(fullName: string, email: string, password:
     }
 
     const data = await response.json();
+    // Store JWT token for future requests
+    if (data.token) {
+      await AsyncStorage.setItem('auth_token', data.token);
+    }
     return data.user;
   } catch (error) {
     console.error('Registration failed:', error);
@@ -141,11 +149,11 @@ export async function registerAccount(fullName: string, email: string, password:
 // Reset password via API
 export async function resetPassword(email: string, newPassword: string): Promise<boolean> {
   try {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
     const response = await fetch(`${apiUrl}/api/auth/password-reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, new_password_hash: newPassword }),
+      body: JSON.stringify({ email, new_password: newPassword }),
       signal: AbortSignal.timeout(5000),
     });
 
