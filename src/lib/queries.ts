@@ -14,11 +14,16 @@ export const queryKeys = {
   node: (id: number) => ['nodes', id],
   closures: ['closures'],
   closure: (id: number) => ['closures', id],
+  closureSplices: (id: number) => ['closures', id, 'splices'],
   splitters: ['splitters'],
   splices: ['splices'],
   customers: ['customers'],
+  jobs: ['jobs'],
+  job: (id: number) => ['jobs', id],
+  inventory: ['inventory'],
   uploads: ['uploads'],
   stats: ['stats'],
+  power: ['power'],
 };
 
 // ============ AUTH QUERIES ============
@@ -179,5 +184,124 @@ export function useStats() {
     queryFn: () => api.getStats(),
     staleTime: 60000,
     retry: 1,
+  });
+}
+
+// ============ SPLICE QUERIES ============
+export function useClosureSplices(closureId: number) {
+  return useQuery({
+    queryKey: ['closures', closureId, 'splices'],
+    queryFn: () => api.getClosureSplices(closureId),
+    enabled: !!closureId,
+    retry: 1,
+  });
+}
+
+export function useCreateClosureSplice(closureId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => api.createClosureSplice(closureId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['closures', closureId, 'splices'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.closure(closureId) });
+    },
+  });
+}
+
+export function useUpdateSplice(spliceId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => api.updateSplice(spliceId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.splices });
+    },
+  });
+}
+
+// ============ POWER QUERIES ============
+export function usePowerCalculate() {
+  return useMutation({
+    mutationFn: (data: any) => api.calculatePower(data),
+  });
+}
+
+// ============ JOBS QUERIES ============
+export function useJobs() {
+  return useQuery({
+    queryKey: queryKeys.jobs,
+    queryFn: () => api.getJobs(),
+    staleTime: 60000,
+    retry: 1,
+  });
+}
+
+export function useJob(id: number) {
+  return useQuery({
+    queryKey: queryKeys.job(id),
+    queryFn: () => api.getJob(id),
+    enabled: !!id,
+    retry: 1,
+  });
+}
+
+export function useCreateJob() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => api.createJob(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs });
+    },
+  });
+}
+
+export function useLogJobAction(jobId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => api.logJobAction(jobId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.job(jobId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs });
+    },
+  });
+}
+
+// ============ INVENTORY QUERIES ============
+export function useInventory() {
+  return useQuery({
+    queryKey: queryKeys.inventory,
+    queryFn: () => api.getInventory(),
+    staleTime: 60000,
+    retry: 1,
+  });
+}
+
+export function useAssignInventory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => api.assignInventory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
+    },
+  });
+}
+
+// ============ CUSTOMERS QUERIES ============
+export function useCustomers() {
+  return useQuery({
+    queryKey: queryKeys.customers,
+    queryFn: () => api.getCustomers(),
+    staleTime: 60000,
+    retry: 1,
+  });
+}
+
+export function useCreateCustomer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => api.createCustomer(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      queryClient.invalidateQueries({ queryKey: queryKeys.mapData });
+    },
   });
 }
