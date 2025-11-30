@@ -35,3 +35,6 @@ export * from './offlineFirst';
 
 // Bonus: Offline GPS Mapping
 export * from './offlineGPS';
+
+// Offline Map Tiles Caching
+export * from './offlineMapTiles';

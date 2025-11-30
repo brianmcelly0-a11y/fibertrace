@@ -156,6 +156,9 @@ tool_usage_logs, daily_reports
 - ✅ Offline queue scaffolding
 - ✅ Background sync ready
 - ✅ Conflict resolution framework
+- ✅ **NEW: Offline Map Tiles Caching** - Download maps for offline use
+- ✅ **Settings: Predownload maps for your area (WiFi recommended)**
+- ✅ Map tiles cached locally (7-day expiry)
 
 ---
 
