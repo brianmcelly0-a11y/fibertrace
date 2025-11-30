@@ -5,7 +5,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
 
 let authToken: string | null = null;
 
-async function getAuthHeader() {
+async function getAuthHeader(): Promise<Record<string, string>> {
   if (!authToken) {
     authToken = await AsyncStorage.getItem('auth_token');
   }
@@ -60,9 +60,10 @@ export const api = {
 
   async getMe() {
     const headers = await getAuthHeader();
+    const finalHeaders = { 'Content-Type': 'application/json', ...headers };
     const res = await fetch(`${API_BASE}/api/auth/me`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json', ...headers },
+      headers: finalHeaders as Record<string, string>,
     });
     if (!res.ok) throw new Error('Failed to fetch user');
     return res.json();
@@ -71,8 +72,9 @@ export const api = {
   // ===== MAP DATA =====
   async getMapData() {
     const headers = await getAuthHeader();
+    const finalHeaders = { 'Content-Type': 'application/json', ...headers };
     const res = await fetch(`${API_BASE}/api/map/data`, {
-      headers: { 'Content-Type': 'application/json', ...headers },
+      headers: finalHeaders as Record<string, string>,
     });
     if (!res.ok) throw new Error('Failed to fetch map data');
     return res.json();
@@ -81,8 +83,9 @@ export const api = {
   async getMapLayers(layers?: string[]) {
     const headers = await getAuthHeader();
     const query = layers ? `?layers=${layers.join(',')}` : '';
+    const finalHeaders = { 'Content-Type': 'application/json', ...headers };
     const res = await fetch(`${API_BASE}/api/map/layers${query}`, {
-      headers: { 'Content-Type': 'application/json', ...headers },
+      headers: finalHeaders as Record<string, string>,
     });
     if (!res.ok) throw new Error('Failed to fetch map layers');
     return res.json();
@@ -98,7 +101,7 @@ export const api = {
 
     const res = await fetch(`${API_BASE}/api/uploads`, {
       method: 'POST',
-      headers: { ...headers },
+      headers: headers as Record<string, string>,
       body: formData,
     });
     if (!res.ok) throw new Error('Failed to upload file');
@@ -107,8 +110,9 @@ export const api = {
 
   async getUploads() {
     const headers = await getAuthHeader();
+    const finalHeaders = { 'Content-Type': 'application/json', ...headers };
     const res = await fetch(`${API_BASE}/api/uploads`, {
-      headers: { 'Content-Type': 'application/json', ...headers },
+      headers: finalHeaders as Record<string, string>,
     });
     if (!res.ok) throw new Error('Failed to fetch uploads');
     return res.json();
@@ -118,6 +122,12 @@ export const api = {
   async getNodes() {
     const res = await fetch(`${API_BASE}/api/nodes`);
     if (!res.ok) throw new Error('Failed to fetch nodes');
+    return res.json();
+  },
+
+  async getNode(id: number) {
+    const res = await fetch(`${API_BASE}/api/nodes/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch node');
     return res.json();
   },
 
@@ -145,6 +155,12 @@ export const api = {
   async getClosures() {
     const res = await fetch(`${API_BASE}/api/closures`);
     if (!res.ok) throw new Error('Failed to fetch closures');
+    return res.json();
+  },
+
+  async getClosure(id: number) {
+    const res = await fetch(`${API_BASE}/api/closures/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch closure');
     return res.json();
   },
 
@@ -179,6 +195,12 @@ export const api = {
   async getRoutes() {
     const res = await fetch(`${API_BASE}/api/routes`);
     if (!res.ok) throw new Error('Failed to fetch routes');
+    return res.json();
+  },
+
+  async getRoute(id: number) {
+    const res = await fetch(`${API_BASE}/api/routes/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch route');
     return res.json();
   },
 
