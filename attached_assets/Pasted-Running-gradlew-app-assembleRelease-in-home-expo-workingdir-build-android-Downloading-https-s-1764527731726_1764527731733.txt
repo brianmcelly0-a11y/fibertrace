@@ -1,0 +1,51 @@
+Running 'gradlew :app:assembleRelease' in /home/expo/workingdir/build/android
+Downloading https://services.gradle.org/distributions/gradle-8.3-all.zip
+10
+%.
+20%
+30%.
+40%
+50%
+60%.
+70%
+80%
+90%
+100%
+Welcome to Gradle 8.3!
+Here are the highlights of this release:
+ - Faster Java compilation
+- Reduced memory usage
+- Support for running on Java 20
+For more details see https://docs.gradle.org/8.3/release-notes.html
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Configure project :
+Path for java installation '/usr/lib/jvm/openjdk-11' (Common Linux Locations) does not contain a java executable
+> Task :gradle-plugin:pluginDescriptors
+> Task :gradle-plugin:processResources
+> Task :gradle-plugin:compileKotlin
+> Task :gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:classes
+> Task :gradle-plugin:jar
+> Task :gradle-plugin:inspectClassesForKotlinIC
+FAILURE:
+Build failed with an exception.
+* Where:
+Build file '/home/expo/workingdir/build/android/app/build.gradle' line: 1
+* What went wrong:
+A problem occurred evaluating project ':app'.
+> Failed to apply plugin 'com.android.internal.application'.
+   > Android Gradle plugin requires Java 17 to run. You are currently using Java 11.
+      Your current JDK is located in /usr/lib/jvm/java-11-openjdk-amd64
+      You can try some of the following options:
+- changing the IDE settings.
+       - changing the JAVA_HOME environment variable.
+- changing `org.gradle.java.home` in `gradle.properties`.
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+BUILD FAILED in 1m 10s
+5 actionable tasks: 5 executed
+Error: Gradle build failed with unknown error. See logs for the "Run gradlew" phase for more information.
