@@ -68,6 +68,52 @@ export const api = {
     return res.json();
   },
 
+  // ===== MAP DATA =====
+  async getMapData() {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE}/api/map/data`, {
+      headers: { 'Content-Type': 'application/json', ...headers },
+    });
+    if (!res.ok) throw new Error('Failed to fetch map data');
+    return res.json();
+  },
+
+  async getMapLayers(layers?: string[]) {
+    const headers = await getAuthHeader();
+    const query = layers ? `?layers=${layers.join(',')}` : '';
+    const res = await fetch(`${API_BASE}/api/map/layers${query}`, {
+      headers: { 'Content-Type': 'application/json', ...headers },
+    });
+    if (!res.ok) throw new Error('Failed to fetch map layers');
+    return res.json();
+  },
+
+  // ===== UPLOADS =====
+  async uploadFile(file: File, entityType?: string, entityId?: number) {
+    const headers = await getAuthHeader();
+    const formData = new FormData();
+    formData.append('file', file);
+    if (entityType) formData.append('entity_type', entityType);
+    if (entityId) formData.append('entity_id', entityId.toString());
+
+    const res = await fetch(`${API_BASE}/api/uploads`, {
+      method: 'POST',
+      headers: { ...headers },
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Failed to upload file');
+    return res.json();
+  },
+
+  async getUploads() {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_BASE}/api/uploads`, {
+      headers: { 'Content-Type': 'application/json', ...headers },
+    });
+    if (!res.ok) throw new Error('Failed to fetch uploads');
+    return res.json();
+  },
+
   // ===== NODES =====
   async getNodes() {
     const res = await fetch(`${API_BASE}/api/nodes`);

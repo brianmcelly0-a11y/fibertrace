@@ -2,6 +2,8 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import pg from 'pg';
 import { hashPassword, verifyPassword, generateToken, authMiddleware, AuthRequest } from './auth.js';
+import uploadRouter, { initUploadsTable } from './uploads.js';
+import mapRouter from './map.js';
 
 const { Pool } = pg;
 const app: Express = express();
@@ -16,6 +18,16 @@ const pool = new Pool({
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Store pool in app context for router access
+app.use((req, res, next) => {
+  (req.app as any).pool = pool;
+  next();
+});
+
+// Register routers
+app.use('/api', uploadRouter);
+app.use('/api', mapRouter);
 
 // Initialize database schema
 async function initDatabase() {
@@ -1181,6 +1193,10 @@ app.listen(PORT, '0.0.0.0', () => {
   
   // Initialize database in background
   initDatabase()
-    .then(() => console.log('Database: PostgreSQL tables ready'))
+    .then(() => {
+      console.log('Database: PostgreSQL tables ready');
+      return initUploadsTable(pool);
+    })
+    .then(() => console.log('Uploads table initialized'))
     .catch(err => console.error('Database init warning:', err.message));
 });

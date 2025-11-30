@@ -4,7 +4,7 @@
 
 **Latest Update:** Real-world authentication system with JWT tokens, bcrypt password hashing, and secured API endpoints.
 
-## ✅ REAL-WORLD AUTH SYSTEM IMPLEMENTED
+## ✅ REAL-WORLD AUTH + UPLOADS + MAP SYSTEM IMPLEMENTED
 
 ### **Authentication (JWT + Bcrypt)**
 - ✅ JWT token generation and validation (7-day expiry)
@@ -15,6 +15,19 @@
 - ✅ `/api/auth/me` - Protected endpoint requiring JWT
 - ✅ Token persistence in AsyncStorage
 - ✅ Secure authorization header handling
+
+### **File Uploads (Multer + Local Storage)**
+- ✅ `/api/uploads` - Multipart file upload with auth
+- ✅ `/api/uploads/download` - Secure file downloads
+- ✅ Uploads table with entity linking
+- ✅ 50MB file size limit
+- ✅ Image/PDF/CSV validation
+
+### **Map Data Aggregation**
+- ✅ `/api/map/data` - All layers in one request
+- ✅ `/api/map/layers` - Filtered layer queries
+- ✅ Real-time counts and timestamps
+- ✅ Performance optimized with parallel queries
 
 ## ✅ PROFESSIONAL POLISH IMPLEMENTED
 
