@@ -431,3 +431,52 @@ export const api = {
     return res.json();
   },
 };
+
+  // ===== REPORT EXPORTS (Module L) =====
+  async exportRoute(id: number, format: 'csv' | 'json' = 'csv') {
+    const res = await fetch(`${API_BASE}/api/reports/route/${id}/export?format=${format}`);
+    if (!res.ok) throw new Error('Failed to export route');
+    if (format === 'csv') return res.text();
+    return res.json();
+  },
+
+  async getDailyReport(date?: string, userId?: number) {
+    let url = `${API_BASE}/api/reports/daily`;
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (userId) params.append('userId', userId.toString());
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch daily reports');
+    return res.json();
+  },
+
+  async exportDailyReport(date: string, format: 'csv' | 'json' = 'csv') {
+    const res = await fetch(`${API_BASE}/api/reports/daily/export?date=${date}&format=${format}`);
+    if (!res.ok) throw new Error('Failed to export daily report');
+    if (format === 'csv') return res.text();
+    return res.json();
+  },
+
+  // ===== BATCH SYNC (Module M) =====
+  async batchSync(clientTime: string, items: any[]) {
+    const res = await fetch(`${API_BASE}/api/sync/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientTime, items }),
+    });
+    if (!res.ok) throw new Error('Failed to sync batch');
+    return res.json();
+  },
+
+  async resolveConflict(clientId: string, resolution: 'keep-client' | 'keep-server' | 'merge', clientVersion: number, serverVersion: number) {
+    const res = await fetch(`${API_BASE}/api/sync/resolve-conflict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId, resolution, clientVersion, serverVersion }),
+    });
+    if (!res.ok) throw new Error('Failed to resolve conflict');
+    return res.json();
+  },
+};

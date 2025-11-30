@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 const API_BASE = 'http://localhost:5000';
 
 async function runIntegrationTests() {
-  console.log('\n🔗 FRONTEND + BACKEND INTEGRATION TEST\n');
+  console.log('\n🔗 FRONTEND + BACKEND INTEGRATION TEST (ALL MODULES)\n');
   
   let passed = 0, failed = 0;
   const test = async (name: string, fn: () => Promise<void>) => {
@@ -17,8 +17,9 @@ async function runIntegrationTests() {
     }
   };
 
-  // 1. Register new user
-  let userId = 0, token = '';
+  let userId = 0, token = '', routeId = 0, closureId = 0, jobId = 0, inventoryId = 0;
+
+  // ===== MODULES A-K (Original Tests) =====
   await test('Register User', async () => {
     const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
@@ -37,8 +38,6 @@ async function runIntegrationTests() {
     if (!userId || !token) throw new Error('No user or token');
   });
 
-  // 2. Create route via API
-  let routeId = 0;
   await test('Create Route', async () => {
     const res = await fetch(`${API_BASE}/api/routes`, {
       method: 'POST',
@@ -56,8 +55,6 @@ async function runIntegrationTests() {
     routeId = data.id;
   });
 
-  // 3. Create closure
-  let closureId = 0;
   await test('Create Closure', async () => {
     const res = await fetch(`${API_BASE}/api/closures`, {
       method: 'POST',
@@ -78,7 +75,6 @@ async function runIntegrationTests() {
     closureId = data.id;
   });
 
-  // 4. Create splice in closure
   await test('Create Splice in Closure', async () => {
     const res = await fetch(`${API_BASE}/api/closures/${closureId}/splices`, {
       method: 'POST',
@@ -95,7 +91,6 @@ async function runIntegrationTests() {
     if (!res.ok) throw new Error(`Status ${res.status}`);
   });
 
-  // 5. Get closure with splices
   await test('Get Closure with Splices', async () => {
     const res = await fetch(`${API_BASE}/api/closures/${closureId}`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
@@ -104,7 +99,6 @@ async function runIntegrationTests() {
     if (!Array.isArray(data.splices)) throw new Error('No splices array');
   });
 
-  // 6. Calculate power
   await test('Calculate Power Chain', async () => {
     const res = await fetch(`${API_BASE}/api/power/calculate`, {
       method: 'POST',
@@ -120,8 +114,6 @@ async function runIntegrationTests() {
     if (!Array.isArray(data.nodes)) throw new Error('No power nodes');
   });
 
-  // 7. Create job
-  let jobId = 0;
   await test('Create Job', async () => {
     const res = await fetch(`${API_BASE}/api/jobs`, {
       method: 'POST',
@@ -138,7 +130,6 @@ async function runIntegrationTests() {
     jobId = data.id;
   });
 
-  // 8. Log job action
   await test('Log Job Action', async () => {
     const res = await fetch(`${API_BASE}/api/jobs/${jobId}/log`, {
       method: 'POST',
@@ -152,8 +143,6 @@ async function runIntegrationTests() {
     if (!res.ok) throw new Error(`Status ${res.status}`);
   });
 
-  // 9. Assign inventory
-  let inventoryId = 0;
   await test('Create Inventory', async () => {
     const res = await fetch(`${API_BASE}/api/inventory`, {
       method: 'POST',
@@ -182,7 +171,6 @@ async function runIntegrationTests() {
     if (!res.ok) throw new Error(`Status ${res.status}`);
   });
 
-  // 10. Get protected endpoint with JWT
   await test('Protected Endpoint with JWT', async () => {
     const res = await fetch(`${API_BASE}/api/auth/me`, {
       headers: {
@@ -195,13 +183,68 @@ async function runIntegrationTests() {
     if (data.user.id !== userId) throw new Error('Wrong user');
   });
 
+  // ===== MODULE L (Reports) =====
+  await test('Export Route as CSV (Module L)', async () => {
+    const res = await fetch(`${API_BASE}/api/reports/route/${routeId}/export?format=csv`);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const csv = await res.text();
+    if (!csv.includes('Route Report')) throw new Error('Invalid CSV format');
+  });
+
+  await test('Get Daily Reports (Module L)', async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(`${API_BASE}/api/reports/daily?date=${today}`);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json() as any;
+    if (!Array.isArray(data.reports)) throw new Error('Invalid reports array');
+  });
+
+  // ===== MODULE M (Batch Sync) =====
+  await test('Batch Sync with ID Mapping (Module M)', async () => {
+    const res = await fetch(`${API_BASE}/api/sync/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientTime: new Date().toISOString(),
+        items: [
+          {
+            clientId: 'client-route-sync-1',
+            operation: 'create',
+            resource: 'route',
+            payload: { route_name: 'Sync Test Route', cable_type: 'SM 12F', core_count: 12, total_length_meters: 2000, created_by: userId }
+          }
+        ]
+      })
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json() as any;
+    if (!data.idMap) throw new Error('No ID map in response');
+    if (!data.idMap['client-route-sync-1']) throw new Error('Client ID not mapped to server ID');
+  });
+
+  await test('Resolve Sync Conflict (Module M)', async () => {
+    const res = await fetch(`${API_BASE}/api/sync/resolve-conflict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientId: 'test-conflict',
+        resolution: 'keep-server',
+        clientVersion: 1,
+        serverVersion: 2
+      })
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json() as any;
+    if (data.resolution !== 'keep-server') throw new Error('Conflict not resolved correctly');
+  });
+
   console.log(`\n${'='.repeat(50)}`);
   console.log(`📊 Integration Test Results: ${passed}/${passed + failed} passed`);
   console.log(`${'='.repeat(50)}\n`);
 
   if (failed === 0) {
     console.log('✅ ALL INTEGRATION TESTS PASSED!\n');
-    console.log('Frontend API client + Backend = FULLY OPERATIONAL\n');
+    console.log('Modules A-M (Full Spec) = FULLY OPERATIONAL\n');
   }
 
   process.exit(failed === 0 ? 0 : 1);

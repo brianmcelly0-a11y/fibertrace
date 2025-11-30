@@ -305,3 +305,46 @@ export function useCreateCustomer() {
     },
   });
 }
+
+// ============ REPORT EXPORTS (Module L) ============
+export function useExportRoute(id: number) {
+  return useMutation({
+    mutationFn: (format: 'csv' | 'json') => api.exportRoute(id, format),
+  });
+}
+
+export function useDailyReport(date?: string, userId?: number) {
+  return useQuery({
+    queryKey: ['reports', 'daily', date, userId],
+    queryFn: () => api.getDailyReport(date, userId),
+    enabled: !!date,
+  });
+}
+
+export function useExportDailyReport() {
+  return useMutation({
+    mutationFn: (data: { date: string; format?: 'csv' | 'json' }) => api.exportDailyReport(data.date, data.format || 'csv'),
+  });
+}
+
+// ============ BATCH SYNC (Module M) ============
+export function useBatchSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { clientTime: string; items: any[] }) => api.batchSync(data.clientTime, data.items),
+    onSuccess: () => {
+      // Invalidate all queries to refresh after sync
+      qc.invalidateQueries({ queryKey: queryKeys.routes });
+      qc.invalidateQueries({ queryKey: queryKeys.closures });
+      qc.invalidateQueries({ queryKey: queryKeys.jobs });
+      qc.invalidateQueries({ queryKey: queryKeys.inventory });
+    },
+  });
+}
+
+export function useResolveConflict() {
+  return useMutation({
+    mutationFn: (data: { clientId: string; resolution: 'keep-client' | 'keep-server' | 'merge'; clientVersion: number; serverVersion: number }) =>
+      api.resolveConflict(data.clientId, data.resolution, data.clientVersion, data.serverVersion),
+  });
+}

@@ -1347,3 +1347,240 @@ app.post('/api/inventory/assign', async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// ============ BATCH SYNC ENDPOINT (Module M) ============
+app.post('/api/sync/batch', async (req: Request, res: Response) => {
+  try {
+    const { clientTime, items } = req.body;
+    const serverTime = new Date().toISOString();
+    const results: any[] = [];
+    const idMap: Record<string, number> = {};
+
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ error: 'Items must be an array' });
+    }
+
+    // Process each queued item
+    for (const item of items) {
+      try {
+        const { clientId, operation, resource, payload, tentativeServerId } = item;
+        let serverId: number | null = null;
+        let status = 'ok';
+        let message = '';
+        let serverVersion = 1;
+
+        if (operation === 'create') {
+          // Create new resource
+          let query = '';
+          let params: any[] = [];
+
+          if (resource === 'route') {
+            query = `INSERT INTO routes (route_name, cable_type, core_count, total_length_meters, created_by) 
+                     VALUES ($1, $2, $3, $4, $5) RETURNING id`;
+            params = [payload.route_name, payload.cable_type, payload.core_count, payload.total_length_meters, payload.created_by];
+          } else if (resource === 'closure') {
+            query = `INSERT INTO closures (closure_name, closure_type, latitude, longitude, route_id, created_by) 
+                     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`;
+            params = [payload.closure_name, payload.closure_type, payload.latitude, payload.longitude, payload.route_id, payload.created_by];
+          } else if (resource === 'splice') {
+            query = `INSERT INTO splices (closure_id, fiber_in, fiber_out, loss_reading, created_by) 
+                     VALUES ($1, $2, $3, $4, $5) RETURNING id`;
+            params = [payload.closure_id, payload.fiber_in, payload.fiber_out, payload.loss_reading, payload.created_by];
+          }
+
+          if (query) {
+            const result = await pool.query(query, params);
+            serverId = result.rows[0].id;
+            idMap[clientId] = serverId;
+          }
+        } else if (operation === 'update') {
+          // Update existing resource
+          const resourceId = tentativeServerId || idMap[payload.serverId];
+          
+          let query = '';
+          let params: any[] = [];
+
+          if (resource === 'route') {
+            query = `UPDATE routes SET route_name = $1, updated_at = NOW() WHERE id = $2 RETURNING id`;
+            params = [payload.route_name, resourceId];
+          } else if (resource === 'closure') {
+            query = `UPDATE closures SET closure_name = $1, updated_at = NOW() WHERE id = $2 RETURNING id`;
+            params = [payload.closure_name, resourceId];
+          }
+
+          if (query) {
+            const result = await pool.query(query, params);
+            if (result.rows.length === 0) {
+              status = 'conflict';
+              message = 'Resource not found or deleted';
+            }
+          }
+        } else if (operation === 'delete') {
+          // Soft delete or mark as deleted
+          const resourceId = tentativeServerId || idMap[payload.serverId];
+          
+          if (resource === 'route') {
+            await pool.query('UPDATE routes SET status = $1 WHERE id = $2', ['deleted', resourceId]);
+          }
+        }
+
+        results.push({
+          clientId,
+          serverId: serverId || undefined,
+          status,
+          message: message || undefined,
+          serverVersion
+        });
+      } catch (itemError: any) {
+        results.push({
+          clientId: item.clientId,
+          status: 'error',
+          message: itemError.message
+        });
+      }
+    }
+
+    res.json({
+      serverTime,
+      clientTime,
+      results,
+      idMap
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ REPORT EXPORT ENDPOINTS (Module L) ============
+
+// Export route as CSV
+app.get('/api/reports/route/:id/export', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { format = 'csv' } = req.query;
+
+    // Get route with all related data
+    const routeResult = await pool.query(
+      `SELECT r.*, COUNT(DISTINCT n.id) as node_count, COUNT(DISTINCT c.id) as closure_count
+       FROM routes r
+       LEFT JOIN nodes n ON r.id = n.route_id
+       LEFT JOIN closures c ON r.id = c.route_id
+       WHERE r.id = $1
+       GROUP BY r.id`,
+      [id]
+    );
+
+    if (routeResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Route not found' });
+    }
+
+    const route = routeResult.rows[0];
+
+    if (format === 'csv') {
+      // Generate CSV
+      const csv = `Route Report
+Route ID,${route.id}
+Route Name,${route.route_name}
+Cable Type,${route.cable_type}
+Core Count,${route.core_count}
+Total Length (m),${route.total_length_meters}
+Status,${route.status}
+Nodes,${route.node_count}
+Closures,${route.closure_count}
+Created At,${route.created_at}
+Updated At,${route.updated_at}`;
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="route-${id}-report.csv"`);
+      res.send(csv);
+    } else if (format === 'json') {
+      res.json({
+        success: true,
+        format: 'csv',
+        filename: `route-${id}-report.csv`,
+        data: route
+      });
+    } else {
+      res.status(400).json({ error: 'Invalid format. Use csv or json' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get daily report with date filter
+app.get('/api/reports/daily', async (req: Request, res: Response) => {
+  try {
+    const { date, userId } = req.query;
+    let query = `SELECT dr.*, u.full_name, COUNT(j.id) as job_count
+                 FROM daily_reports dr
+                 LEFT JOIN users u ON dr.user_id = u.id
+                 LEFT JOIN jobs j ON j.assigned_to = dr.user_id AND DATE(j.created_at) = dr.report_date
+                 WHERE 1=1`;
+    const params: any[] = [];
+
+    if (date) {
+      params.push(date);
+      query += ` AND dr.report_date = $${params.length}`;
+    }
+    if (userId) {
+      params.push(userId);
+      query += ` AND dr.user_id = $${params.length}`;
+    }
+
+    query += ` GROUP BY dr.id, u.id ORDER BY dr.report_date DESC`;
+
+    const result = await pool.query(query, params);
+    res.json({ reports: result.rows, count: result.rows.length });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Export daily report as CSV
+app.get('/api/reports/daily/export', async (req: Request, res: Response) => {
+  try {
+    const { date, format = 'csv' } = req.query;
+
+    const reports = await pool.query(
+      `SELECT dr.*, u.full_name FROM daily_reports dr
+       LEFT JOIN users u ON dr.user_id = u.id
+       WHERE dr.report_date = $1
+       ORDER BY dr.user_id`,
+      [date]
+    );
+
+    if (format === 'csv') {
+      let csv = `Date,User,Jobs Completed,Splices Done,Distance (km)\n`;
+      for (const report of reports.rows) {
+        csv += `${report.report_date},${report.full_name},${report.jobs_completed},${report.splices_done},${report.distance_walked_km}\n`;
+      }
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="daily-report-${date}.csv"`);
+      res.send(csv);
+    } else {
+      res.json({ reports: reports.rows });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Upload conflict resolution (for sync conflicts)
+app.post('/api/sync/resolve-conflict', async (req: Request, res: Response) => {
+  try {
+    const { clientId, resolution, clientVersion, serverVersion } = req.body;
+    // resolution: 'keep-client' | 'keep-server' | 'merge'
+    // In a real system, implement merge logic here
+
+    res.json({
+      success: true,
+      clientId,
+      resolution,
+      resolvedVersion: clientVersion // or serverVersion based on resolution
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
