@@ -5,19 +5,12 @@
   "build": {
     "production": {
       "android": {
-        "buildType": "apk",
-        "ndk": "25.2.9519653"
-      },
-      "env": {
-        "npm_config_legacy_peer_deps": "true"
+        "buildType": "apk"
       }
     },
     "preview": {
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "npm_config_legacy_peer_deps": "true"
       }
     }
   }
