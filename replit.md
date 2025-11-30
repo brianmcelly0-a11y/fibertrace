@@ -164,10 +164,14 @@ tool_usage_logs, daily_reports
 ✅ bcrypt password hashing (10 rounds)  
 ✅ JWT tokens with expiry (7 days)  
 ✅ Protected endpoints (auth middleware)  
+✅ Token version invalidation (password reset revokes all sessions)  
+✅ Fail-closed authentication (rejects tokens without version claim)  
+✅ Database-backed password reset tokens (15-min expiry, single-use)  
 ✅ CORS enabled  
 ✅ Parameterized queries (SQL injection safe)  
 ✅ File upload validation  
 ✅ Role-based access control  
+✅ Authenticated WebSocket endpoints  
 
 ---
 
