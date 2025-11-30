@@ -1,0 +1,101 @@
+Frontend offline queueing: ability to create/write items and queue them locally.
+SyncManager: batched sync to backend, file upload handling, events for UI integration, conflict flagging.
+Backend: /sync/batch endpoint that accepts queued items and persists them to Postgres resources table using a DB-backed controller and transactions.
+Postgres integration: db connection, repository helper methods, initial migration for a generic resources table.
+What is NOT DONE (gaps to full app functionality) Core backend endpoints (many are missing / need implementation)
+Auth endpoints: /auth/login, /auth/register, /auth/me are not implemented (JWT issuance & verification not done).
+Map data endpoint: /map/data aggregate endpoint not implemented.
+Routes endpoints: /routes CRUD and any specialized route drawing endpoint not implemented.
+Nodes endpoints: /nodes CRUD not implemented.
+Closures endpoints: /closures CRUD and closure details not implemented (only covered generically via resources table).
+Splices endpoints: /closures/:id/splices and /splices CRUD not implemented.
+Splitters / power calculations: /power/calculate or server-side propagation logic not implemented.
+Customers endpoints: /customers CRUD not implemented.
+Jobs endpoints: /jobs, /jobs/:id/log, job approval flows not implemented.
+Inventory endpoints: /inventory, /inventory/assign not implemented.
+Uploads endpoint: /uploads (multipart handler, storing files and metadata) not implemented (SyncManager uploads via apiClient.uploadPhoto expects this).
+Reporting endpoints: /reports/export etc not implemented.
+Websocket / notification channels (supervisor approvals, push notifications) not implemented.
+Backend production concerns not solved:
+
+Authentication & authorization (JWT, role checks)
+Production file storage (S3 or similar) & CDN
+Migrations automation (e.g., node-pg-migrate / Knex)
+Schema normalization: currently we created a generic resources table — many resources should be normalized tables for performance and constraints (routes, closures, splices, users, jobs).
+Rate limiting, logging, monitoring, background job processing for exports/heavy computations
+Comprehensive error handling & validation (Zod or JOI)
+Tests (unit/integration) and CI pipelines
+Frontend missing pieces:
+
+Full UI screens for every module (map, routes, closures, splices, splitters, jobs, inventory).
+React Query hooks for most resources (only suggested earlier).
+Map offline tile storage & rendering tuning; map clustering for many markers.
+Conflict resolution UI: currently SyncManager marks conflicts; UI to display and resolve isn't implemented.
+File pickers and local file persistence strategy (esp. for Android/iOS differences).
+Role-based UI conditions (tech vs supervisor) on screens.
+Background sync handling (OS background tasks) for robust offline sync.
+E2E tests and automated UI tests.
+Other integration items:
+
+API contracts (OpenAPI/Swagger) for all endpoints — not generated.
+Mobile build & release pipelines (EAS config exists but polish/test steps needed).
+Prioritized workplan to complete everything (recommended order) I. Stabilize core infra (1-2 sprints)
+Add auth (backend + frontend): users table, /auth endpoints, JWT middleware.
+Implement /uploads endpoint (multipart) with storage (local or S3) and uploads table; wire apiClient.uploadPhoto to it.
+Wire SyncManager fully to real uploads and test end-to-end.
+II. Map + Routes + Closures MVP (2-3 sprints)
+
+4. Create normalized tables & repo methods: routes, closures, nodes, splices.
+Implement backend endpoints for CRUDs and map aggregate endpoint.
+Frontend: Map screen, draw route tool, route list, add closure UI.
+III. Splice & Power chain (1-2 sprints)
+
+7. Implement splices endpoints & UI
+Implement splitter model and power propagation calculation (server-side), added to closure endpoints.
+IV. Jobs, Inventory, Reports (2 sprints)
+
+9. Implement jobs lifecycle, job logs, inventory assign
+Reporting exports and supervisor flows
+V. Offline polish & scale (2 sprints)
+
+11. Complete SyncManager edge cases: exponential backoff, file-blob persistence, large batch chunking
+Background sync integration, push notifications
+Performance: map clustering, pagination, DB indexes & query tuning
+VI. Finalize (1-2 sprints)
+
+14. Tests & QA, Accessibility, Security audit, Release builds
+Concrete next steps I can deliver immediately (pick one or more)
+Implement Auth module (backend: users table migration, /auth endpoints + JWT middleware; frontend: login/register + token integration). — High priority to secure endpoints.
+Implement Uploads module (backend /uploads using multer + uploads table or S3 adapter; frontend: uploadPhoto wired to api client). — Required to complete queued photo uploads.
+Create normalized DB schemas and repository modules for routes/closures/splices + backend endpoints for each; produce migration SQL and server controllers. — Large but recommended for production.
+Produce React Query hooks + example screens (Map + Route draw) and integrate with SyncManager enqueueing for writes.
+Quick mapping of what to build first (minimal viable integration)
+Backend: auth + uploads + routes CRUD + sync/batch (already present)
+Frontend: login/register screens + apiClient (already suggested) + map screen that fetches GET /map/data and can create a route via enqueue/create
+This path lets technicians login, draw a route offline, and sync it to the server (end-to-end testable).
+My recommended immediate next action
+Implement Auth + Uploads on the backend so SyncManager's uploads and protected endpoints work reliably. If you confirm, I will:
+generate the backend auth module files (migration for users table, auth controller, JWT middleware, update server.ts to use auth),
+generate the uploads endpoint (multer-based or S3 adapter) + uploads table migration,
+update SyncManager / apiClient usage instructions if needed.
+Finally — checklist of DONE vs NOT DONE (compact)
+
+DONE
+
+Frontend: example apiClient (suggested), SyncManager (src/sync/*), queue persistence
+Backend: example /sync/batch handler (in-memory and DB-backed variants), DB pool helper, repository helpers, migration for generic resources, docs (READMEs)
+End-to-end plan & module integration documentation produced
+NOT DONE (high level)
+
+Auth endpoints & JWT middleware
+Uploads endpoint & persistent storage for photos
+Normalized DB schemas & endpoints for main domain entities (routes, closures, splices, nodes, jobs, inventory, customers)
+Complete frontend UI screens for modules and React Query hooks
+Conflict resolution UIs
+Background sync integration & advanced offline handling
+Exports, reporting, notifications, testing, CI/CD, deployment automation, performance optimizations
+Would you like me to:
+
+(A) implement Auth + JWT backend + frontend login/register screens next, or
+(B) implement Uploads endpoint + uploads DB + frontend upload integration, or
+(C) produce normalized DB schemas + backend controllers for the route/closure/splice modules?
