@@ -469,7 +469,6 @@ export const api = {
     if (!res.ok) throw new Error('Failed to sync data');
     return res.json();
   },
-};
 
   // ===== REPORT EXPORTS (Module L) =====
   async exportRoute(id: number, format: 'csv' | 'json' = 'csv') {

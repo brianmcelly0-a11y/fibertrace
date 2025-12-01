@@ -1,0 +1,107 @@
+SyntaxError: SyntaxError: /home/expo/workingdir/build/src/lib/api.ts: Missing semicolon. (475:7)
+  473 |
+  474 |   // ===== REPORT EXPORTS (Module L) =====
+> 475 |   async exportRoute(id: number, format: 'csv' | 'json' = 'csv') {
+      |        ^
+  476 |     const res = await fetch(`${API_BASE}/api/reports/route/${id}/export?format=${format}`);
+  477 |     if (!res.ok) throw new Error('Failed to export route');
+  478 |     if (format === 'csv') return res.text();
+SyntaxError: /home/expo/workingdir/build/src/lib/api.ts: Missing semicolon. (475:7)
+  473 |
+  474 |   // ===== REPORT EXPORTS (Module L) =====
+> 475 |   async exportRoute(id: number, format: 'csv' | 'json' = 'csv') {
+      |        ^
+  476 |     const res = await fetch(`${API_BASE}/api/reports/route/${id}/export?format=${format}`);
+  477 |     if (!res.ok) throw new Error('Failed to export route');
+  478 |     if (format === 'csv') return res.text();
+    at constructor (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:367:19)
+    at TypeScriptParserMixin.raise (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:6624:19)
+    at TypeScriptParserMixin.semicolon (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:6920:10)
+    at TypeScriptParserMixin.parseExpressionStatement (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:13361:10)
+    at TypeScriptParserMixin.parseStatementContent (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:12975:19)
+    at TypeScriptParserMixin.parseStatementContent (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:9569:18)
+    at TypeScriptParserMixin.parseStatementLike (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:12843:17)
+    at TypeScriptParserMixin.parseModuleItem (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:12820:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:13392:36)
+    at TypeScriptParserMixin.parseBlockBody (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:13385:10)
+    at TypeScriptParserMixin.parseProgram (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:12698:10)
+    at TypeScriptParserMixin.parseTopLevel (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:12688:25)
+    at TypeScriptParserMixin.parse (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:14568:25)
+    at TypeScriptParserMixin.parse (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:10183:18)
+    at parse (/home/expo/workingdir/build/node_modules/@babel/parser/lib/index.js:14581:26)
+    at parser (/home/expo/workingdir/build/node_modules/@babel/core/lib/parser/index.js:41:34)
+    at parser.next (<anonymous>)
+at normalizeFile (/home/expo/workingdir/build/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+    at run (/home/expo/workingdir/build/node_modules/@babel/core/lib/transformation/index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (/home/expo/workingdir/build/node_modules/@babel/core/lib/transform.js:22:33)
+    at transform.next (<anonymous>)
+    at evaluateSync (/home/expo/workingdir/build/node_modules/gensync/index.js:251:28)
+    at sync (/home/expo/workingdir/build/node_modules/gensync/index.js:89:14)
+    at stopHiding - secret - don't use this - v1 (/home/expo/workingdir/build/node_modules/@babel/core/lib/errors/rewrite-stack-trace.js:47:12)
+    at Object.transformSync (/home/expo/workingdir/build/node_modules/@babel/core/lib/transform.js:42:76)
+    at parseWithBabel (/home/expo/workingdir/build/node_modules/@expo/metro-config/build/transformSync.js:57:18)
+    at transformSync (/home/expo/workingdir/build/node_modules/@expo/metro-config/build/transformSync.js:46:12)
+    at Object.transform (/home/expo/workingdir/build/node_modules/@expo/metro-config/build/babel-transformer.js:108:58)
+    at transformJSWithBabel (/home/expo/workingdir/build/node_modules/@expo/metro-config/build/transform-worker/metro-transform-worker.js:304:47)
+    at Object.transform (/home/expo/workingdir/build/node_modules/@expo/metro-config/build/transform-worker/metro-transform-worker.js:407:12)
+    at Object.transform (/home/expo/workingdir/build/node_modules/@expo/metro-config/build/transform-worker/transform-worker.js:68:23)
+    at transformFile (/home/expo/workingdir/build/node_modules/metro/src/DeltaBundler/Worker.flow.js:54:36)
+    at Object.transform (/home/expo/workingdir/build/node_modules/metro/src/DeltaBundler/Worker.flow.js:30:10)
+    at execFunction (/home/expo/workingdir/build/node_modules/jest-worker/build/workers/processChild.js:149:17)
+    at execHelper (/home/expo/workingdir/build/node_modules/jest-worker/build/workers/processChild.js:137:5)
+    at execMethod (/home/expo/workingdir/build/node_modules/jest-worker/build/workers/processChild.js:140:5)
+    at process.messageListener (/home/expo/workingdir/build/node_modules/jest-worker/build/workers/processChild.js:44:7)
+    at process.emit (node:events:517:28)
+    at emit (node:internal/child_process:944:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:83:21)
+> Task :app:createBundleReleaseJsAndAssets FAILED
+> Task :expo-modules-core:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/core/utilities/EmulatorUtilities.kt:30:13 'SERIAL: String!' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:151:13 Variable 'catalystInstance' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/ExpoModulesHelper.kt:11:21 'newInstance(): T!' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/Promise.kt:72:18 This declaration overrides deprecated member but not marked as deprecated itself. This deprecation won't be inherited in future releases. Please add @Deprecated annotation or suppress. See https://youtrack.jetbrains.com/issue/KT-47902 for details
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/Utils.kt:8:3 Expected performance impact from inlining is insignificant. Inlining works best for functions with parameters of functional types
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/activityresult/ActivityResultsManager.kt:51:24 Parameter 'activity' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/activityresult/AppContextActivityResultRegistry.kt:119:51 'getParcelableExtra(String!): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/activityresult/AppContextActivityResultRegistry.kt:186:26 'getParcelable(String?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/activityresult/AppContextActivityResultRegistry.kt:277:83 'getParcelable(String?): T?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/activityresult/DataPersistor.kt:67:20 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/activityresult/DataPersistor.kt:85:26 'getSerializable(String?): Serializable?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/devtools/cdp/CdpNetworkTypes.kt:186:54 Parameter 'request' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/devtools/cdp/CdpNetworkTypes.kt:210:54 Parameter 'request' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/devtools/cdp/CdpNetworkTypes.kt:230:15 Parameter 'now' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/devtools/cdp/CdpNetworkTypes.kt:230:54 Parameter 'request' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/events/KModuleEventEmitterWrapper.kt:90:7 'constructor Event<T : Event<(raw) Event<*>>!>(Int)' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/jni/JavaScriptObject.kt:90:33 Parameter 'null' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/jni/JavaScriptObject.kt:91:34 Parameter 'null' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/jni/JavaScriptObject.kt:132:5 Parameter 'null' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/sharedobjects/SharedObjectRegistry.kt:54:35 Destructured parameter 'js' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/tracing/ExpoTrace.kt:33:1 Expected performance impact from inlining is insignificant. Inlining works best for functions with parameters of functional types
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/tracing/ExpoTrace.kt:40:1 Expected performance impact from inlining is insignificant. Inlining works best for functions with parameters of functional types
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/tracing/ExpoTrace.kt:50:1 Expected performance impact from inlining is insignificant. Inlining works best for functions with parameters of functional types
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/tracing/ExpoTrace.kt:56:1 Expected performance impact from inlining is insignificant. Inlining works best for functions with parameters of functional types
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/Either.kt:76:12 Parameter 'type' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/Either.kt:79:12 Parameter 'type' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/Either.kt:82:11 Parameter 'type' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/Either.kt:85:11 Parameter 'type' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/Either.kt:99:12 Parameter 'type' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/Either.kt:102:11 Parameter 'type' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/Either.kt:114:12 Parameter 'type' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/Either.kt:117:11 Parameter 'type' is never used
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/JSTypeConverterHelper.kt:44:17 'get(String!): Any?' is deprecated. Deprecated in Java
+w: file:///home/expo/workingdir/build/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/types/TypeConverterProvider.kt:175:46 'newInstance(): T!' is deprecated. Deprecated in Java
+> Task :expo-modules-core:buildCMakeRelWithDebInfo[arm64-v8a]
+312 actionable tasks: 312 executed
+FAILURE: Build failed with an exception.
+* What went wrong:
+Execution failed for task ':app:createBundleReleaseJsAndAssets'.
+> Process 'command 'node'' finished with non-zero exit value 1
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+BUILD FAILED in 2m 7s
+Error: Gradle build failed with unknown error. See logs for the "Run gradlew" phase for more information.
