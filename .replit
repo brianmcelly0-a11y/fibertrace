@@ -54,4 +54,3 @@ expertMode = true
 [userenv]
 
 [userenv.shared]
-EXPO_PUBLIC_API_URL = "https://8e940663-3dae-42e9-963c-10e8422739ab-00-xd31fhn7ymts.riker.replit.dev"
