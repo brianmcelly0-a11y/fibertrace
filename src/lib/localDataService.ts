@@ -148,6 +148,16 @@ export const localData = {
     await ensureInitialized();
     return { id: Date.now(), ...data };
   },
+
+  async updateUserSettings(userId: string | number, settings: any) {
+    await ensureInitialized();
+    return { id: userId, ...settings };
+  },
+
+  async updateUserProfile(userId: string | number, profile: any) {
+    await ensureInitialized();
+    return { id: userId, ...profile };
+  },
 };
 
 export const api = localData;

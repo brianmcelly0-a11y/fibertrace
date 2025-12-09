@@ -13,8 +13,10 @@ import ToolsHubScreen from './screens/ToolsHubScreen';
 import InfrastructureHubScreen from './screens/InfrastructureHubScreen';
 import ReportsHubScreen from './screens/ReportsHubScreen';
 import SettingsHubScreen from './screens/SettingsHubScreen';
+import AdminHubScreen from './screens/AdminHubScreen';
 import { colors } from './theme/colors';
 import { initializeOfflineStorage } from './lib/offlineStorage';
+import { syncManager } from './services/SyncManager';
 import * as AuthStorage from './lib/authStorage';
 import * as Permissions from './lib/permissions';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -45,7 +47,10 @@ function AppContent() {
       console.error('Failed to initialize offline storage:', error);
     });
 
-    // Check if user is already logged in
+    syncManager.initialize().catch(error => {
+      console.error('Failed to initialize sync manager:', error);
+    });
+
     const checkAuth = async () => {
       const loggedIn = await AuthStorage.isLoggedIn();
       setIsLoggedIn(loggedIn);
@@ -54,12 +59,10 @@ function AppContent() {
 
     checkAuth();
 
-    // Check sync status periodically
     const checkSync = async () => {
       try {
-        const { getSyncStatus } = await import('./lib/offlineStorage');
-        const status = await getSyncStatus();
-        setSyncStatus({ isOnline: true, unsynced: status.unsynced });
+        const pendingCount = await syncManager.getPendingCount();
+        setSyncStatus({ isOnline: syncManager.getOnlineStatus(), unsynced: pendingCount });
       } catch {
         setSyncStatus({ isOnline: false, unsynced: 0 });
       }
@@ -67,7 +70,16 @@ function AppContent() {
 
     checkSync();
     const interval = setInterval(checkSync, 30000);
-    return () => clearInterval(interval);
+
+    const unsubscribe = syncManager.on('online-status-changed', (data) => {
+      setSyncStatus(prev => ({ ...prev, isOnline: data.isOnline }));
+    });
+
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+      syncManager.shutdown();
+    };
   }, []);
 
   const handleLoginSuccess = React.useCallback(async (user: any) => {
@@ -232,6 +244,7 @@ function AppContent() {
     Jobs: JobsHubScreen,
     Reports: ReportsHubScreen,
     Tools: ToolsHubScreen,
+    Admin: AdminHubScreen,
     Settings: () => <SettingsHubScreen onLogout={handleLogout} />,
   };
 
